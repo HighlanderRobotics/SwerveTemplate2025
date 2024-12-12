@@ -12,11 +12,13 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
 import edu.wpi.first.math.numbers.N8;
 
+import java.util.List;
 import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Add your docs here. */
 public class Vision {
@@ -49,15 +51,16 @@ public class Vision {
     Logger.processInputs("Apriltag Vision/" + io.getName(), inputs);
   }
 
-  public Optional<EstimatedRobotPose> update(PhotonPipelineResult result) {
+  public Optional<EstimatedRobotPose> update(List<PhotonTrackedTarget> targets, double timestamp) {
     // Skip if we only have 1 target
     // TODO change
-    if (result.getTargets().size() < 1) {
+    if (targets.size() < 1) {
       return Optional.empty();
     }
     var estPose =
         VisionHelper.update(
-            result,
+            targets,
+            timestamp,
             inputs.constants.intrinsicsMatrix(),
             inputs.constants.distCoeffs(),
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,

@@ -193,7 +193,7 @@ public class VisionHelper {
    *     create the estimate.
    */
   public static Optional<EstimatedRobotPose> update(
-      PhotonPipelineResult cameraResult,
+    List<PhotonTrackedTarget> targets, double timestamp,
       Matrix<N3, N3> cameraMatrix,
       Matrix<N8, N1> distCoeffs,
       PoseStrategy strat,
@@ -202,12 +202,13 @@ public class VisionHelper {
     Optional<EstimatedRobotPose> estimatedPose;
     switch (strat) {
       case LOWEST_AMBIGUITY:
-        estimatedPose = lowestAmbiguityStrategy(cameraResult, robotToCamera);
+        estimatedPose = lowestAmbiguityStrategy(targets, timestamp, robotToCamera);
         break;
       case MULTI_TAG_PNP_ON_COPROCESSOR:
         estimatedPose =
             multiTagOnCoprocStrategy(
-                cameraResult,
+                targets,
+                timestamp,
                 Optional.of(cameraMatrix),
                 Optional.of(distCoeffs),
                 robotToCamera,
@@ -241,7 +242,7 @@ public class VisionHelper {
    *     create the estimate.
    */
   private static Optional<EstimatedRobotPose> multiTagOnCoprocStrategy(
-      PhotonPipelineResult result,
+    List<PhotonTrackedTarget> targets, double timestamp,
       Optional<Matrix<N3, N3>> cameraMatrix,
       Optional<Matrix<N8, N1>> distCoeffs,
       Transform3d robotToCamera,
@@ -257,12 +258,13 @@ public class VisionHelper {
       return Optional.of(
           new EstimatedRobotPose(
               best,
-              result.getTimestampSeconds(),
-              result.getTargets(),
+              timestamp,
+              targets,
               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
     } else {
       return update(
-          result,
+          targets,
+          timestamp,
           cameraMatrix.get(),
           distCoeffs.get(),
           multiTagFallbackStrategy,
@@ -280,12 +282,12 @@ public class VisionHelper {
    *     estimation.
    */
   private static Optional<EstimatedRobotPose> lowestAmbiguityStrategy(
-      PhotonPipelineResult result, Transform3d robotToCamera) {
+      List<PhotonTrackedTarget> targets, double timestamp, Transform3d robotToCamera) {
     PhotonTrackedTarget lowestAmbiguityTarget = null;
 
     double lowestAmbiguityScore = 10;
 
-    for (PhotonTrackedTarget target : result.targets) {
+    for (PhotonTrackedTarget target : targets) {
       double targetPoseAmbiguity = target.getPoseAmbiguity();
 
       if (target.getFiducialId() < 1 || target.getFiducialId() > 16) continue;
@@ -318,8 +320,8 @@ public class VisionHelper {
                 .get()
                 .transformBy(lowestAmbiguityTarget.getBestCameraToTarget().inverse())
                 .transformBy(robotToCamera.inverse()),
-            result.getTimestampSeconds(),
-            result.getTargets(),
+            timestamp,
+            targets,
             PoseStrategy.LOWEST_AMBIGUITY);
     return Optional.of(estimatedRobotPose);
   }

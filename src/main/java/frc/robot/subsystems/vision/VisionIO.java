@@ -23,6 +23,7 @@ public interface VisionIO {
 
   public static class VisionIOInputs {
     public double timestamp = 0.0;
+    // latency could just be calculated from the timestamp, do we need it as an input or could it be an output?
     public double latency = 0.0;
     // We could use protobuf serialization for this instead of custom
     // There are som alleged performance considerations for protobuf
