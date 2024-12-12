@@ -10,6 +10,8 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.math.numbers.N8;
+
 import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
@@ -26,7 +28,7 @@ public class Vision {
       String cameraName,
       Transform3d robotToCamera,
       Matrix<N3, N3> intrinsicsMatrix,
-      Matrix<N5, N1> distCoeffs) {}
+      Matrix<N8, N1> distCoeffs) {}
 
   private final VisionIO io;
   public final VisionIOInputsLogged inputs = new VisionIOInputsLogged();

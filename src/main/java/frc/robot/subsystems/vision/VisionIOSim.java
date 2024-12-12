@@ -5,8 +5,10 @@
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -22,7 +24,8 @@ public class VisionIOSim implements VisionIO {
   private final PhotonCamera camera;
   private final PhotonCameraSim simCamera;
   private final VisionConstants constants;
-  public static Supplier<Pose3d> pose;
+
+  public static Supplier<Pose3d> pose;  
 
   public VisionIOSim(VisionConstants constants) {
     this.sim = new VisionSystemSim(constants.cameraName());
@@ -41,7 +44,7 @@ public class VisionIOSim implements VisionIO {
     sim.addCamera(simCamera, constants.robotToCamera());
 
     try {
-      var field = AprilTagFields.k2024Crescendo.loadAprilTagLayoutField();
+      var field = AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo);
       field.setOrigin(OriginPosition.kBlueAllianceWallRightSide);
       sim.addAprilTags(field);
     } catch (Exception e) {
@@ -64,10 +67,10 @@ public class VisionIOSim implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    var result = camera.getLatestResult();
+    var result = camera.getAllUnreadResults().get(0);
     sim.update(pose.get().toPose2d());
     inputs.timestamp = result.getTimestampSeconds();
-    inputs.latency = result.getLatencyMillis();
+    inputs.latency = (RobotController.getFPGATime() / 1e6) - result.getTimestampSeconds();
     inputs.targets = result.targets; // TODO aaaaaaa
     inputs.constants = constants;
   }

@@ -8,7 +8,8 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.math.numbers.N8;
+import edu.wpi.first.wpilibj.RobotController;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
@@ -20,7 +21,7 @@ public class VisionIOReal implements VisionIO {
   public String cameraName;
   public PhotonCamera camera;
   public Matrix<N3, N3> cameraMatrix;
-  public Matrix<N5, N1> distCoeffs;
+  public Matrix<N8, N1> distCoeffs;
   private final VisionConstants constants;
 
   /*** Transform3d from the center of the robot to the camera mount position (ie,
@@ -41,13 +42,14 @@ public class VisionIOReal implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    var result = camera.getLatestResult();
+    var result = camera.getAllUnreadResults().get(0);
     inputs.timestamp = result.getTimestampSeconds();
-    inputs.latency = result.getLatencyMillis();
+    inputs.latency = (RobotController.getFPGATime() / 1e6) - result.getTimestampSeconds();
     inputs.targets = result.targets;
     inputs.numTags = result.targets.size();
     inputs.constants = constants;
-    inputs.coprocPNPTransform = result.getMultiTagResult().estimatedPose.best;
+    // TODO: make this cleaner and use an optional instead of kZero
+    inputs.coprocPNPTransform = result.getMultiTagResult().isPresent() ? result.getMultiTagResult().get().estimatedPose.best : Transform3d.kZero;
   }
 
   @Override

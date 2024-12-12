@@ -10,9 +10,11 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -22,17 +24,20 @@ public interface VisionIO {
   public static class VisionIOInputs {
     public double timestamp = 0.0;
     public double latency = 0.0;
+    // We could use protobuf serialization for this instead of custom
+    // There are som alleged performance considerations for protobuf
+    // Could be worth testing? This works for now
     public List<PhotonTrackedTarget> targets =
-        new ArrayList<>(); // TODO make protobuf work whenever that happens
-    public double numTags = 0; // TODO why isn't this just targets.size()?
+        new ArrayList<>();
+    public double numTags = 0; // Helps with deserialization
     public Transform3d coprocPNPTransform = new Transform3d();
-    public Pose3d[] targetPose3ds = new Pose3d[] {};
+    public Pose3d[] targetPose3ds = new Pose3d[0];
     public VisionConstants constants =
         new VisionConstants(
             "Default",
             new Transform3d(),
             Matrix.eye(Nat.N3()),
-            MatBuilder.fill(Nat.N5(), Nat.N1(), 0.0, 0.0, 0.0, 0.0, 0.0));
+            MatBuilder.fill(Nat.N8(), Nat.N1(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
   }
 
   public void updateInputs(VisionIOInputs inputs);

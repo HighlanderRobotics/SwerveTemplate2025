@@ -13,6 +13,7 @@
 
 package frc.robot.subsystems.swerve;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -37,6 +38,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public static final double HEADING_VELOCITY_KP = 4.0;
   public static final double HEADING_VOLTAGE_KP = 4.0;
+
+  public static AprilTagFieldLayout fieldTags;
 
   public static final ModuleConstants frontLeft =
       new ModuleConstants(0, "Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
