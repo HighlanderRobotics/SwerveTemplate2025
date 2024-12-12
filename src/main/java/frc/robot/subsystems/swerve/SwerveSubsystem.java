@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.checkerframework.checker.units.qual.t;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.targeting.PhotonPipelineResult;
 
@@ -103,6 +104,10 @@ public class SwerveSubsystem extends SubsystemBase {
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
+  
+  private Alert usingSyncOdometryAlert = new Alert("Using Sync Odometry", AlertType.kInfo);
+  private Alert missingModuleData = new Alert("Missing Module Data", AlertType.kError);
+  private Alert missingGyroData = new Alert("Missing Gyro Data", AlertType.kWarning);
   
   // Need this annotation so the alert doesn't get mad
   @SuppressWarnings("resource")
@@ -191,15 +196,20 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateOdometry() {
     Logger.recordOutput("Swerve/Updates Since Last", odoThreadInputs.sampledStates.size());
     var sampleStates = odoThreadInputs.sampledStates;
-    if (sampleStates.size() == 0 || sampleStates.get(0).values().isEmpty())
+    if (sampleStates.size() == 0 || sampleStates.get(0).values().isEmpty()) {
+      usingSyncOdometryAlert.set(true);
       sampleStates = getSyncSamples();
+    } else {
+      usingSyncOdometryAlert.set(false);
+    }
+
     for (var sample : sampleStates) {
       // Read wheel deltas from each module
       SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
       SwerveModulePosition[] moduleDeltas =
           new SwerveModulePosition[4]; // change in positions since the last update
       boolean hasNullModulePosition = false;
-      // Technically we could have not 4 modules worth of data here but im not dealing w that
+      // Technically we could have not 4 modules worth of data here but if we have a design that goof we can deal later
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         var dist = sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex));
         if (dist == null) {
@@ -209,6 +219,7 @@ public class SwerveSubsystem extends SubsystemBase {
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
         }
+
         var rot = sample.values().get(new SignalID(SignalType.STEER, moduleIndex));
         if (rot == null) {
           // No value at this timestamp
@@ -217,9 +228,12 @@ public class SwerveSubsystem extends SubsystemBase {
           Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, false);
           break;
         }
+
+        // all our data is good!
         modulePositions[moduleIndex] =
             new SwerveModulePosition(
                 dist, Rotation2d.fromRotations(rot)); // gets positions from the thread, NOT inputs
+
         Logger.recordOutput("Odometry/Received Update From Module " + moduleIndex, true);
         moduleDeltas[moduleIndex] =
             new SwerveModulePosition(
@@ -228,14 +242,17 @@ public class SwerveSubsystem extends SubsystemBase {
                 modulePositions[moduleIndex].angle);
         lastModulePositions[moduleIndex] = modulePositions[moduleIndex];
       }
+
+      // missing some data :(
       if (hasNullModulePosition) {
+        missingModuleData.set(true);
         if (!gyroInputs.connected
             || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
                 == null) {
-          Logger.recordOutput("Odometry/Received Gyro Update", false);
+          missingGyroData.set(true);
           // no modules and no gyro so we're just sad :(
         } else {
-          Logger.recordOutput("Odometry/Received Gyro Update", true);
+          missingGyroData.set(false);
           // null here is checked by if clause
           rawGyroRotation =
               Rotation2d.fromDegrees(sample.values().get(new SignalID(SignalType.GYRO, -1)));
@@ -250,6 +267,7 @@ public class SwerveSubsystem extends SubsystemBase {
         continue;
       }
 
+      // If we have all our module data . . .
       // The twist represents the motion of the robot since the last
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
@@ -257,11 +275,11 @@ public class SwerveSubsystem extends SubsystemBase {
       if (!gyroInputs.connected
           || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
               == null) {
-        Logger.recordOutput("Odometry/Received Gyro Update", false);
+                missingGyroData.set(true);
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
-        Logger.recordOutput("Odometry/Received Gyro Update", true);
+        missingGyroData.set(false);
         rawGyroRotation =
             Rotation2d.fromDegrees(
                 sample
@@ -302,8 +320,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateVision() {
     for (var camera : cameras) {
       boolean isNewResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
-      try {
-        var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp);
+    var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp);
+    if (estPose.isPresent()) {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, isNewResult);
@@ -314,7 +332,6 @@ public class SwerveSubsystem extends SubsystemBase {
             camera.inputs.timestamp,
             VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
         if (isNewResult) lastEstTimestamp = camera.inputs.timestamp;
-      } catch (NoSuchElementException e) {
       }
     }
   }
