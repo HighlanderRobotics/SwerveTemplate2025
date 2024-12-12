@@ -67,12 +67,16 @@ public class VisionIOSim implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    var result = camera.getAllUnreadResults().get(0);
+    var results = camera.getAllUnreadResults();
+    if (results.size() > 0) {
+      var result = results.get(0);
+      inputs.timestamp = result.getTimestampSeconds();
+      inputs.latency = (RobotController.getFPGATime() / 1e6) - result.getTimestampSeconds();
+      inputs.targets = result.targets; // TODO aaaaaaa
+      inputs.constants = constants;
+    }
+    // else leave stale data
     sim.update(pose.get().toPose2d());
-    inputs.timestamp = result.getTimestampSeconds();
-    inputs.latency = (RobotController.getFPGATime() / 1e6) - result.getTimestampSeconds();
-    inputs.targets = result.targets; // TODO aaaaaaa
-    inputs.constants = constants;
   }
 
   @Override

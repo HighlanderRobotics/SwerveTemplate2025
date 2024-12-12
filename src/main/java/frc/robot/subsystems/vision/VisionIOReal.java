@@ -42,14 +42,18 @@ public class VisionIOReal implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
-    var result = camera.getAllUnreadResults().get(0);
-    inputs.timestamp = result.getTimestampSeconds();
-    inputs.latency = (RobotController.getFPGATime() / 1e6) - result.getTimestampSeconds();
-    inputs.targets = result.targets;
-    inputs.numTags = result.targets.size();
-    inputs.constants = constants;
-    // TODO: make this cleaner and use an optional instead of kZero
-    inputs.coprocPNPTransform = result.getMultiTagResult().isPresent() ? result.getMultiTagResult().get().estimatedPose.best : Transform3d.kZero;
+    var results = camera.getAllUnreadResults();
+    if (results.size() > 0) {
+      var result = results.get(0);
+      inputs.timestamp = result.getTimestampSeconds();
+      inputs.latency = (RobotController.getFPGATime() / 1e6) - result.getTimestampSeconds();
+      inputs.targets = result.targets;
+      inputs.numTags = result.targets.size();
+      inputs.constants = constants;
+      // TODO: make this cleaner and use an optional instead of kZero
+      inputs.coprocPNPTransform = result.getMultiTagResult().isPresent() ? result.getMultiTagResult().get().estimatedPose.best : Transform3d.kZero;
+    }
+    // else leave stale data, which is the user's responsibility to handle.
   }
 
   @Override
