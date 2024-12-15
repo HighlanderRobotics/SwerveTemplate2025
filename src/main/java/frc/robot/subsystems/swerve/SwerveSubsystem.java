@@ -14,11 +14,13 @@
 package frc.robot.subsystems.swerve;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.checkerframework.checker.units.qual.t;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.targeting.PhotonPipelineResult;
 
@@ -32,6 +34,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -334,5 +337,92 @@ public class SwerveSubsystem extends SubsystemBase {
         if (isNewResult) lastEstTimestamp = camera.inputs.timestamp;
       }
     }
+  }
+
+  /** Returns the current pose estimator pose. */
+  @AutoLogOutput(key = "Odometry/Robot")
+  public Pose2d getPose() {
+    return estimator.getEstimatedPosition();
+  }
+
+  /** Wraps {@link #getPose()} in a Pose3d. */
+  public Pose3d getPose3d() {
+    return new Pose3d(getPose());
+  }
+
+  /** Returns the current odometry rotation as returned by {@link #getPose()}. */
+  public Rotation2d getRotation() {
+    return getPose().getRotation();
+  }
+
+  @AutoLogOutput(key = "Odometry/Velocity")
+  public ChassisSpeeds getVelocity() {
+    var speeds =
+            kinematics.toChassisSpeeds(
+                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+    speeds.toRobotRelativeSpeeds(getRotation());
+    return new ChassisSpeeds(
+        speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
+  }
+
+  /**
+   * Runs the drivetrain at the given robot relative speeds
+   *
+   * @param speeds robot relative target speeds
+   * @param openLoop should the modules use open loop voltage to approximate the setpoint
+   * @param moduleForcesX field relative force feedforward to apply to the modules. Must have the
+   *     same number of elements as there are modules.
+   * @param moduleForcesY field relative force feedforward to apply to the modules. Must have the
+   *     same number of elements as there are modules.
+   */
+  private void drive(ChassisSpeeds speeds, boolean openLoop, double[] moduleForcesX, double[] moduleForcesY) {
+    // Calculate module setpoints
+    speeds.discretize(0.02);
+    final SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+
+    Logger.recordOutput("Swerve/Target Speeds", speeds);
+    Logger.recordOutput("Swerve/Speed Error", speeds.minus(getVelocity()));
+    Logger.recordOutput(
+        "Swerve/Target Chassis Speeds Field Relative",
+        ChassisSpeeds.fromRobotRelativeSpeeds(speeds, getRotation()));
+
+    // Send setpoints to modules
+    final SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[modules.length];
+    // Kind of abusing SwerveModuleState here but w/e
+    final SwerveModuleState[] forceSetpoints = new SwerveModuleState[modules.length];
+    for (int i = 0; i < optimizedSetpointStates.length; i++) {
+      if (openLoop) {
+        // Use open loop voltage control (teleop)
+        // Heuristic to enable/disable FOC
+        final boolean focEnable =
+              Math.sqrt(
+                      Math.pow(this.getVelocity().vxMetersPerSecond, 2)
+                          + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
+                  < MAX_LINEAR_SPEED * 0.9; // TODO tune the magic number (90% of free speed)
+        optimizedSetpointStates[i] =
+            modules[i].runVoltageSetpoint(new SwerveModuleState(
+              // Convert velocity to voltage with kv
+              optimizedSetpointStates[i].speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, optimizedSetpointStates[i].angle), focEnable);
+      } else {
+        // Use closed loop current control (automated actions)
+        // Calculate robot forces
+        var robotRelForceX =
+            moduleForcesX[i] * getRotation().getCos() - moduleForcesY[i] * getRotation().getSin();
+        var robotRelForceY =
+            moduleForcesX[i] * getRotation().getSin() + moduleForcesY[i] * getRotation().getCos();
+        forceSetpoints[i] =
+            new SwerveModuleState(
+                Math.hypot(moduleForcesX[i], moduleForcesY[i]),
+                new Rotation2d(moduleForcesX[i], moduleForcesY[i]));
+        optimizedSetpointStates[i] =
+            modules[i].runSetpoint(setpointStates[i], robotRelForceX, robotRelForceY);
+      }
+    }
+
+    // Log setpoint states
+    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    Logger.recordOutput("SwerveStates/ForceSetpoints", forceSetpoints);
+    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
   }
 }
