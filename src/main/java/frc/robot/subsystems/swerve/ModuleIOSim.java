@@ -1,5 +1,4 @@
-// Copyright 2021-2023 FRC 6328
-// http://github.com/Mechanical-Advantage
+// Copyright 2023-2025 FRC 8033
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
