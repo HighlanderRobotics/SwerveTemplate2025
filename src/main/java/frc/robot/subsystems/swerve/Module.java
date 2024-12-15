@@ -12,14 +12,13 @@
 
 package frc.robot.subsystems.swerve;
 
-import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import org.littletonrobotics.junction.Logger;
 
+/** Wrapper around ModuleIO and ModuleIOInputs to organize module-level functionality. */
 public class Module {
   // Represents per-module constants
   public record ModuleConstants(
@@ -42,9 +41,6 @@ public class Module {
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
 
-  private SwerveModuleState lastSetpoint = new SwerveModuleState();
-  private double lastTime = Timer.getFPGATimestamp();
-
   public Module(final ModuleIO io) {
     this.io = io;
   }
@@ -56,9 +52,6 @@ public class Module {
 
   public void periodic() {
     Logger.processInputs(String.format("Swerve/%s Module", inputs.prefix), inputs);
-    Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Available", inputs.prefix),
-        Math.abs(inputs.driveAppliedVolts - RoboRioDataJNI.getVInVoltage()));
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
@@ -70,23 +63,21 @@ public class Module {
   public SwerveModuleState runSetpoint(
       SwerveModuleState state, double forceXNewtons, double forceYNewtons) {
     // Optimize state based on current angle
-    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    state.optimize(getAngle());
     // force on the motor is the total force vector projected onto the velocity vector
     // to project a onto b take ||a||*cos(theta) where theta is the angle between the two vectors
     // We want the magnitude of the projection, so we can ignore the direction of this later
     final var theta = Math.atan2(forceYNewtons, forceXNewtons) - inputs.turnPosition.getRadians();
     final double forceNewtons = Math.hypot(forceXNewtons, forceYNewtons) * Math.cos(theta);
 
-    io.setTurnSetpoint(optimizedState.angle);
+    io.setTurnSetpoint(state.angle);
     io.setDriveSetpoint(
-        optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
+        state.speedMetersPerSecond
+            * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
         forceNewtons);
     Logger.recordOutput(
         String.format("Swerve/%s Module/Force Feedforward", inputs.prefix), forceNewtons);
-    lastSetpoint = optimizedState;
-    lastTime = Timer.getFPGATimestamp();
-    return optimizedState;
+    return state;
   }
 
   /**
@@ -95,41 +86,26 @@ public class Module {
    */
   public SwerveModuleState runVoltageSetpoint(SwerveModuleState state, boolean focEnabled) {
     // Optimize state based on current angle
-    final var optimizedState = SwerveModuleState.optimize(state, getAngle());
+    state.optimize(getAngle());
     Logger.recordOutput(
         String.format("Swerve/%s Module/Voltage Target", inputs.prefix),
-        optimizedState.speedMetersPerSecond);
+        state.speedMetersPerSecond);
 
-    io.setTurnSetpoint(optimizedState.angle);
+    io.setTurnSetpoint(state.angle);
     io.setDriveVoltage(
-        optimizedState.speedMetersPerSecond
-            * Math.cos(optimizedState.angle.minus(inputs.turnPosition).getRadians()),
+        state.speedMetersPerSecond
+            * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
         focEnabled);
 
-    return optimizedState;
+    return state;
   }
 
   /**
    * Runs the module open loop with the specified setpoint state, velocity in volts. Returns the
-   * optimized state.
+   * optimized state. FOC is defaulted to on.
    */
   public SwerveModuleState runVoltageSetpoint(SwerveModuleState state) {
     return runVoltageSetpoint(state, true);
-  }
-
-  /** Runs the module with the specified voltage while controlling to zero degrees. */
-  public void runDriveCharacterization(double volts) {
-    // Closed loop turn control
-    io.setTurnSetpoint(Rotation2d.fromRotations(0.0));
-
-    // Open loop drive control
-    io.setDriveVoltage(volts);
-  }
-
-  /** Runs the module angle with the specified voltage while not moving the drive motor */
-  public void runSteerCharacterization(double volts) {
-    io.setTurnVoltage(volts);
-    io.setDriveVoltage(0.0);
   }
 
   /** Disables all outputs to motors. */
@@ -169,10 +145,5 @@ public class Module {
   /** Returns the module state (turn angle and drive velocity) at normal sampling frequency. */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
-  }
-
-  /** Returns the drive velocity in meters/sec. */
-  public double getCharacterizationVelocity() {
-    return inputs.driveVelocityMetersPerSec;
   }
 }

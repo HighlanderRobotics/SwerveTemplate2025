@@ -27,7 +27,6 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
@@ -68,19 +67,14 @@ public class ModuleIOReal implements ModuleIO {
     // Sensor
     // Meters per second
     DRIVE_CONFIG.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
-    // Voltage Controls Gains
-    DRIVE_CONFIG.Slot0.kV = 2.381;
-    DRIVE_CONFIG.Slot0.kA = 0.65;
-    DRIVE_CONFIG.Slot0.kS = 0.04;
-    DRIVE_CONFIG.Slot0.kP = 2.0;
-    DRIVE_CONFIG.Slot0.kD = 0.2;
 
     // Current control gains
-    DRIVE_CONFIG.Slot1.kV = 0.0;
-    DRIVE_CONFIG.Slot1.kA = (9.37 / 483.0) / Module.DRIVE_ROTOR_TO_METERS; // 3.07135116146;
-    DRIVE_CONFIG.Slot1.kS = 14.0;
-    DRIVE_CONFIG.Slot1.kP = 100.0;
-    DRIVE_CONFIG.Slot1.kD = 1.0;
+    DRIVE_CONFIG.Slot0.kV = 0.0;
+    // kT (stall torque / stall current) converted to linear wheel frame
+    DRIVE_CONFIG.Slot0.kA = (9.37 / 483.0) / Module.DRIVE_ROTOR_TO_METERS; // 3.07135116146;
+    DRIVE_CONFIG.Slot0.kS = 14.0;
+    DRIVE_CONFIG.Slot0.kP = 100.0;
+    DRIVE_CONFIG.Slot0.kD = 1.0;
 
     DRIVE_CONFIG.TorqueCurrent.TorqueNeutralDeadband = 10.0;
 
@@ -115,10 +109,7 @@ public class ModuleIOReal implements ModuleIO {
   private final VoltageOut turnVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityTorqueCurrentFOC driveControlVelocity =
       new VelocityTorqueCurrentFOC(0.0).withSlot(1);
-  // new VelocityVoltage(0.0).withEnableFOC(true).withSlot(0);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
-
-  private final double kAVoltsPerMeterPerSecondSquared;
 
   public ModuleIOReal(ModuleConstants constants) {
     this.constants = constants;
@@ -126,8 +117,6 @@ public class ModuleIOReal implements ModuleIO {
     driveTalon = new TalonFX(constants.driveID(), "canivore");
     turnTalon = new TalonFX(constants.turnID(), "canivore");
     cancoder = new CANcoder(constants.cancoderID(), "canivore");
-
-    kAVoltsPerMeterPerSecondSquared = DRIVE_CONFIG.Slot0.kA;
 
     driveTalon.getConfigurator().apply(DRIVE_CONFIG);
 
@@ -147,7 +136,7 @@ public class ModuleIOReal implements ModuleIO {
     turnConfig.Feedback.RotorToSensorRatio = Module.TURN_GEAR_RATIO;
     turnConfig.Feedback.SensorToMechanismRatio = 1.0;
     turnConfig.Feedback.FeedbackRotorOffset =
-        0.0; // Is this correct? Cancoder config should handle it
+        0.0;
     // Controls Gains
     turnConfig.Slot0.kV = 2.7935;
     turnConfig.Slot0.kA = 0.031543;
@@ -260,7 +249,8 @@ public class ModuleIOReal implements ModuleIO {
       driveTalon.setControl(
           driveControlVelocity
               .withVelocity(metersPerSecond)
-              .withFeedForward(forceNewtons / DCMotor.getKrakenX60Foc(1).KtNMPerAmp));
+              // meters -> motor rotations should be handled by SensorToMechanismRatio
+              .withFeedForward(forceNewtons / (9.37 / 483.0)));
     }
   }
 

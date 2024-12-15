@@ -375,6 +375,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // Calculate module setpoints
     speeds.discretize(0.02);
     final SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
+    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
     SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
 
     Logger.recordOutput("Swerve/Target Speeds", speeds);
@@ -420,7 +421,6 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // Log setpoint states
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
     Logger.recordOutput("SwerveStates/ForceSetpoints", forceSetpoints);
     Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
   }
