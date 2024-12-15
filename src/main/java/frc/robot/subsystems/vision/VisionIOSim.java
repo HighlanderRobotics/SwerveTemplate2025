@@ -4,8 +4,8 @@
 
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFieldLayout.OriginPosition;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.RobotController;
@@ -25,7 +25,7 @@ public class VisionIOSim implements VisionIO {
   private final PhotonCameraSim simCamera;
   private final VisionConstants constants;
 
-  public static Supplier<Pose3d> pose;  
+  public static Supplier<Pose3d> pose;
 
   public VisionIOSim(VisionConstants constants) {
     this.sim = new VisionSystemSim(constants.cameraName());

@@ -13,6 +13,8 @@
 
 package frc.robot.subsystems.swerve;
 
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
@@ -24,9 +26,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Registration;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalType;
-
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-
 import java.util.Optional;
 
 /** IO implementation for Pigeon2 */

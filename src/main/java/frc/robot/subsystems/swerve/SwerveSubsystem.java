@@ -1,5 +1,4 @@
-// Copyright 2021-2023 FRC 6328
-// http://github.com/Mechanical-Advantage
+// Copyright 2023-2025 FRC 8033
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -13,21 +12,8 @@
 
 package frc.robot.subsystems.swerve;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
-import org.checkerframework.checker.units.qual.t;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
-import org.photonvision.targeting.PhotonPipelineResult;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -38,12 +24,12 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.Alert.AlertType;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
@@ -55,6 +41,13 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.Tracer;
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
   // Drivebase constants
@@ -72,24 +65,24 @@ public class SwerveSubsystem extends SubsystemBase {
 
   public static final double HEADING_VELOCITY_KP = 4.0;
   public static final double HEADING_VOLTAGE_KP = 4.0;
-  
+
   public static final ModuleConstants frontLeft =
-  new ModuleConstants(0, "Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
+      new ModuleConstants(0, "Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
   public static final ModuleConstants frontRight =
-  new ModuleConstants(1, "Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
+      new ModuleConstants(1, "Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
   public static final ModuleConstants backLeft =
-  new ModuleConstants(2, "Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
+      new ModuleConstants(2, "Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
   public static final ModuleConstants backRight =
-  new ModuleConstants(3, "Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
-  
+      new ModuleConstants(3, "Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
+
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules; // FL, FR, BL, BR
   private final OdometryThreadIO odoThread;
   private final OdometryThreadIOInputs odoThreadInputs = new OdometryThreadIOInputs();
-  
+
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(new Translation2d[0]);
-  
+
   private final Vision[] cameras;
   public static AprilTagFieldLayout fieldTags;
 
@@ -101,17 +94,18 @@ public class SwerveSubsystem extends SubsystemBase {
         new SwerveModulePosition(),
         new SwerveModulePosition()
       };
+
   private Rotation2d rawGyroRotation = new Rotation2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
   private SwerveDrivePoseEstimator estimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
-  
+
   private Alert usingSyncOdometryAlert = new Alert("Using Sync Odometry", AlertType.kInfo);
   private Alert missingModuleData = new Alert("Missing Module Data", AlertType.kError);
   private Alert missingGyroData = new Alert("Missing Gyro Data", AlertType.kWarning);
-  
+
   // Need this annotation so the alert doesn't get mad
   @SuppressWarnings("resource")
   public SwerveSubsystem(
@@ -130,7 +124,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // global static is mildly questionable
-    VisionIOSim.pose = () -> Pose3d.kZero;//this::getPose3d;
+    VisionIOSim.pose = () -> Pose3d.kZero; // this::getPose3d;
 
     // TODO: update to 2025 field
     try {
@@ -212,7 +206,8 @@ public class SwerveSubsystem extends SubsystemBase {
       SwerveModulePosition[] moduleDeltas =
           new SwerveModulePosition[4]; // change in positions since the last update
       boolean hasNullModulePosition = false;
-      // Technically we could have not 4 modules worth of data here but if we have a design that goof we can deal later
+      // Technically we could have not 4 modules worth of data here but if we have a design that
+      // goof we can deal later
       for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
         var dist = sample.values().get(new SignalID(SignalType.DRIVE, moduleIndex));
         if (dist == null) {
@@ -278,7 +273,7 @@ public class SwerveSubsystem extends SubsystemBase {
       if (!gyroInputs.connected
           || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
               == null) {
-                missingGyroData.set(true);
+        missingGyroData.set(true);
         // We don't have a complete set of data, so just use the module rotations
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       } else {
@@ -299,9 +294,9 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
-  /** 
-   * Generates a set of samples without using the async thread.
-   * Makes lots of Objects, so be careful when using it irl!
+  /**
+   * Generates a set of samples without using the async thread. Makes lots of Objects, so be careful
+   * when using it irl!
    */
   private List<Samples> getSyncSamples() {
     return List.of(
@@ -323,8 +318,8 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateVision() {
     for (var camera : cameras) {
       boolean isNewResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
-    var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp);
-    if (estPose.isPresent()) {
+      var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp);
+      if (estPose.isPresent()) {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
         camera.setSimPose(estPose, camera, isNewResult);
@@ -358,8 +353,8 @@ public class SwerveSubsystem extends SubsystemBase {
   @AutoLogOutput(key = "Odometry/Velocity")
   public ChassisSpeeds getVelocity() {
     var speeds =
-            kinematics.toChassisSpeeds(
-                Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
+        kinematics.toChassisSpeeds(
+            Arrays.stream(modules).map((m) -> m.getState()).toArray(SwerveModuleState[]::new));
     speeds.toRobotRelativeSpeeds(getRotation());
     return new ChassisSpeeds(
         speeds.vxMetersPerSecond, speeds.vyMetersPerSecond, speeds.omegaRadiansPerSecond);
@@ -375,7 +370,8 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param moduleForcesY field relative force feedforward to apply to the modules. Must have the
    *     same number of elements as there are modules.
    */
-  private void drive(ChassisSpeeds speeds, boolean openLoop, double[] moduleForcesX, double[] moduleForcesY) {
+  private void drive(
+      ChassisSpeeds speeds, boolean openLoop, double[] moduleForcesX, double[] moduleForcesY) {
     // Calculate module setpoints
     speeds.discretize(0.02);
     final SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
@@ -396,14 +392,17 @@ public class SwerveSubsystem extends SubsystemBase {
         // Use open loop voltage control (teleop)
         // Heuristic to enable/disable FOC
         final boolean focEnable =
-              Math.sqrt(
-                      Math.pow(this.getVelocity().vxMetersPerSecond, 2)
-                          + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
-                  < MAX_LINEAR_SPEED * 0.9; // TODO tune the magic number (90% of free speed)
+            Math.sqrt(
+                    Math.pow(this.getVelocity().vxMetersPerSecond, 2)
+                        + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
+                < MAX_LINEAR_SPEED * 0.9; // TODO tune the magic number (90% of free speed)
         optimizedSetpointStates[i] =
-            modules[i].runVoltageSetpoint(new SwerveModuleState(
-              // Convert velocity to voltage with kv
-              optimizedSetpointStates[i].speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED, optimizedSetpointStates[i].angle), focEnable);
+            modules[i].runVoltageSetpoint(
+                new SwerveModuleState(
+                    // Convert velocity to voltage with kv
+                    optimizedSetpointStates[i].speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED,
+                    optimizedSetpointStates[i].angle),
+                focEnable);
       } else {
         // Use closed loop current control (automated actions)
         // Calculate robot forces
@@ -424,5 +423,67 @@ public class SwerveSubsystem extends SubsystemBase {
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
     Logger.recordOutput("SwerveStates/ForceSetpoints", forceSetpoints);
     Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+  }
+
+  /**
+   * Drive at a robot-relative speed.
+   *
+   * @param speeds the robot-relative speed reference.
+   * @return a Command driving to the target speeds.
+   */
+  public Command driveVelocity(Supplier<ChassisSpeeds> speeds) {
+    return this.run(() -> drive(speeds.get(), false, new double[4], new double[4]));
+  }
+
+  /**
+   * Drive at a robot-relative speed.
+   *
+   * @param speeds the robot-relative speed reference.
+   * @param xForces an array of forces (in Nm) along the field-relative x axis to add as a
+   *     feedforward to the modules.
+   * @param yForces an array of forces (in Nm) along the field-relative y axis to add as a
+   *     feedforward to the modules.
+   * @return a Command driving to the target speeds.
+   */
+  public Command driveVelocity(
+      Supplier<ChassisSpeeds> speeds, Supplier<double[]> xForces, Supplier<double[]> yForces) {
+    return this.run(() -> drive(speeds.get(), false, xForces.get(), yForces.get()));
+  }
+
+  /**
+   * Drive at a field-relative speed.
+   *
+   * @param speeds the field-relative speed reference.
+   * @return a Command driving to the target speeds.
+   */
+  public Command driveVelocityFieldRelative(Supplier<ChassisSpeeds> speeds) {
+    return this.driveVelocity(
+        () -> {
+          var speed = speeds.get();
+          speed.toRobotRelativeSpeeds(getRotation());
+          return speed;
+        });
+  }
+
+  /**
+   * Drive at a field-relative speed.
+   *
+   * @param speeds the field-relative speed reference.
+   * @param xForces an array of forces (in Nm) along the field-relative x axis to add as a
+   *     feedforward to the modules.
+   * @param yForces an array of forces (in Nm) along the field-relative y axis to add as a
+   *     feedforward to the modules.
+   * @return a Command driving to the target speeds.
+   */
+  public Command driveVelocityFieldRelative(
+      Supplier<ChassisSpeeds> speeds, Supplier<double[]> xForces, Supplier<double[]> yForces) {
+    return this.driveVelocity(
+        () -> {
+          var speed = speeds.get();
+          speed.toRobotRelativeSpeeds(getRotation());
+          return speed;
+        },
+        xForces,
+        yForces);
   }
 }

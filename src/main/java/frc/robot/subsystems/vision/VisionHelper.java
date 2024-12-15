@@ -14,7 +14,6 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.numbers.N5;
 import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -28,7 +27,6 @@ import org.littletonrobotics.junction.LogTable;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.VisionSystemSim;
-import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
@@ -166,7 +164,9 @@ public class VisionHelper {
           new Matrix<N8, N1>(
               Nat.N8(),
               Nat.N1(),
-              table.get("Vision Constants Distortion ", new double[] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0})));
+              table.get(
+                  "Vision Constants Distortion ",
+                  new double[] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0})));
     }
   }
 
@@ -193,7 +193,8 @@ public class VisionHelper {
    *     create the estimate.
    */
   public static Optional<EstimatedRobotPose> update(
-    List<PhotonTrackedTarget> targets, double timestamp,
+      List<PhotonTrackedTarget> targets,
+      double timestamp,
       Matrix<N3, N3> cameraMatrix,
       Matrix<N8, N1> distCoeffs,
       PoseStrategy strat,
@@ -242,7 +243,8 @@ public class VisionHelper {
    *     create the estimate.
    */
   private static Optional<EstimatedRobotPose> multiTagOnCoprocStrategy(
-    List<PhotonTrackedTarget> targets, double timestamp,
+      List<PhotonTrackedTarget> targets,
+      double timestamp,
       Optional<Matrix<N3, N3>> cameraMatrix,
       Optional<Matrix<N8, N1>> distCoeffs,
       Transform3d robotToCamera,
@@ -257,10 +259,7 @@ public class VisionHelper {
               .plus(robotToCamera.inverse()); // field-to-robot
       return Optional.of(
           new EstimatedRobotPose(
-              best,
-              timestamp,
-              targets,
-              PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
+              best, timestamp, targets, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
     } else {
       return update(
           targets,

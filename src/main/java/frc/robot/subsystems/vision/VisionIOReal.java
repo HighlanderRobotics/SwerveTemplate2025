@@ -51,7 +51,10 @@ public class VisionIOReal implements VisionIO {
       inputs.numTags = result.targets.size();
       inputs.constants = constants;
       // TODO: make this cleaner and use an optional instead of kZero
-      inputs.coprocPNPTransform = result.getMultiTagResult().isPresent() ? result.getMultiTagResult().get().estimatedPose.best : Transform3d.kZero;
+      inputs.coprocPNPTransform =
+          result.getMultiTagResult().isPresent()
+              ? result.getMultiTagResult().get().estimatedPose.best
+              : Transform3d.kZero;
     }
     // else leave stale data, which is the user's responsibility to handle.
   }

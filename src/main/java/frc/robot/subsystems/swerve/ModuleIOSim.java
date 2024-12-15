@@ -20,7 +20,6 @@ import com.ctre.phoenix6.sim.ChassisReference;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
@@ -47,10 +46,17 @@ public class ModuleIOSim implements ModuleIO {
       // Third param is the moment of inertia of the swerve wheel
       // Used to approximate the robot inertia, not perfect but fine for the
       // Fidelity of simulation we are targeting
-      new DCMotorSim(LinearSystemId.createDCMotorSystem(driveMotor, 0.025, Module.DRIVE_GEAR_RATIO), driveMotor, 0);
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(driveMotor, 0.025, Module.DRIVE_GEAR_RATIO),
+          driveMotor,
+          0);
   private final DCMotorSim turnSim =
       // Third param is the moment of inertia of the swerve steer
-      new DCMotorSim(LinearSystemId.createDCMotorSystem(DCMotor.getKrakenX60Foc(1), Module.TURN_GEAR_RATIO, 0.0040), DCMotor.getKrakenX60Foc(1).withReduction(Module.TURN_GEAR_RATIO), 0);
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(
+              DCMotor.getKrakenX60Foc(1), Module.TURN_GEAR_RATIO, 0.0040),
+          DCMotor.getKrakenX60Foc(1).withReduction(Module.TURN_GEAR_RATIO),
+          0);
 
   private final Rotation2d turnAbsoluteInitPosition = new Rotation2d(Math.random() * 2.0 * Math.PI);
   private double turnAppliedVolts = 0.0;

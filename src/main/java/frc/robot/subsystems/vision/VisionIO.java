@@ -10,11 +10,9 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -23,13 +21,13 @@ public interface VisionIO {
 
   public static class VisionIOInputs {
     public double timestamp = 0.0;
-    // latency could just be calculated from the timestamp, do we need it as an input or could it be an output?
+    // latency could just be calculated from the timestamp, do we need it as an input or could it be
+    // an output?
     public double latency = 0.0;
     // We could use protobuf serialization for this instead of custom
     // There are som alleged performance considerations for protobuf
     // Could be worth testing? This works for now
-    public List<PhotonTrackedTarget> targets =
-        new ArrayList<>();
+    public List<PhotonTrackedTarget> targets = new ArrayList<>();
     public double numTags = 0; // Helps with deserialization
     public Transform3d coprocPNPTransform = new Transform3d();
     public Pose3d[] targetPose3ds = new Pose3d[0];
