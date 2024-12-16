@@ -63,6 +63,7 @@ public class ModuleIOSim implements ModuleIO {
             LinearSystemId.createDCMotorSystem(
                 driveMotor, 0.025, swerveConstants.getDriveGearRatio()),
             driveMotor,
+            0,
             0);
 
     turnSim = // Third param is the moment of inertia of the swerve steer
@@ -70,6 +71,7 @@ public class ModuleIOSim implements ModuleIO {
             LinearSystemId.createDCMotorSystem(
                 DCMotor.getKrakenX60Foc(1), swerveConstants.getTurnGearRatio(), 0.0040),
             DCMotor.getKrakenX60Foc(1).withReduction(swerveConstants.getTurnGearRatio()),
+            0,
             0);
   }
 

@@ -17,7 +17,6 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -52,7 +51,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private final OdometryThreadIO odoThread;
   private final OdometryThreadIOInputs odoThreadInputs = new OdometryThreadIOInputs();
 
-  private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(new Translation2d[0]);
+  private SwerveDriveKinematics kinematics;
 
   private final Vision[] cameras;
   public static AprilTagFieldLayout fieldTags;
@@ -68,8 +67,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   private Rotation2d rawGyroRotation = new Rotation2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
-  private SwerveDrivePoseEstimator estimator =
-      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
+  private SwerveDrivePoseEstimator estimator;
   private double lastEstTimestamp = 0.0;
   private double lastOdometryUpdateTimestamp = 0.0;
 
@@ -84,6 +82,10 @@ public class SwerveSubsystem extends SubsystemBase {
       ModuleIO[] moduleIOs,
       OdometryThreadIO odoThread) {
     this.constants = constants;
+    this.kinematics = new SwerveDriveKinematics(constants.getModuleTranslations());
+    this.estimator =
+        new SwerveDrivePoseEstimator(
+            kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
     this.gyroIO = gyroIO;
     this.odoThread = odoThread;
     odoThread.start();
