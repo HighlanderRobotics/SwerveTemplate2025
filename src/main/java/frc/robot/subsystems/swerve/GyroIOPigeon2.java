@@ -29,15 +29,18 @@ import java.util.Optional;
 
 /** IO implementation for Pigeon2 */
 public class GyroIOPigeon2 implements GyroIO {
-  private final Pigeon2 pigeon = new Pigeon2(SwerveSubsystem.PIGEON_ID, "canivore");
-  private final StatusSignal<Angle> yaw = pigeon.getYaw();
-  private final StatusSignal<AngularVelocity> yawVelocity = pigeon.getAngularVelocityZWorld();
+  private final Pigeon2 pigeon;
+  private final StatusSignal<Angle> yaw;
+  private final StatusSignal<AngularVelocity> yawVelocity;
 
-  public GyroIOPigeon2() {
+  public GyroIOPigeon2(int id) {
+    pigeon = new Pigeon2(id, "canivore");
+    yaw = pigeon.getYaw();
+    yawVelocity = pigeon.getAngularVelocityZWorld();
     var config = new Pigeon2Configuration();
     pigeon.getConfigurator().apply(config);
     pigeon.getConfigurator().setYaw(0.0);
-    yaw.setUpdateFrequency(Module.ODOMETRY_FREQUENCY_HZ);
+    yaw.setUpdateFrequency(PhoenixOdometryThread.ODOMETRY_FREQUENCY_HZ);
     yawVelocity.setUpdateFrequency(100.0);
     pigeon.optimizeBusUtilization();
     PhoenixOdometryThread.getInstance()

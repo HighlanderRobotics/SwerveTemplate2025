@@ -34,38 +34,43 @@ import frc.robot.subsystems.swerve.Module.ModuleConstants;
 public class ModuleIOSim implements ModuleIO {
   private static final double LOOP_PERIOD_SECS = 0.02;
 
-  private final ModuleConstants constants;
+  private final ModuleConstants moduleConstants;
+  private final SwerveConstants swerveConstants;
 
   private static final DCMotor driveMotor = DCMotor.getKrakenX60Foc(1);
   private final TalonFX driveTalon;
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityTorqueCurrentFOC driveControlVelocity =
       new VelocityTorqueCurrentFOC(0.0).withSlot(1);
-  private final DCMotorSim driveSim =
-      // Third param is the moment of inertia of the swerve wheel
-      // Used to approximate the robot inertia, not perfect but fine for the
-      // Fidelity of simulation we are targeting
-      new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(driveMotor, 0.025, Module.DRIVE_GEAR_RATIO),
-          driveMotor,
-          0);
-  private final DCMotorSim turnSim =
-      // Third param is the moment of inertia of the swerve steer
-      new DCMotorSim(
-          LinearSystemId.createDCMotorSystem(
-              DCMotor.getKrakenX60Foc(1), Module.TURN_GEAR_RATIO, 0.0040),
-          DCMotor.getKrakenX60Foc(1).withReduction(Module.TURN_GEAR_RATIO),
-          0);
+  private final DCMotorSim driveSim;
+  private final DCMotorSim turnSim;
 
   private final Rotation2d turnAbsoluteInitPosition = new Rotation2d(Math.random() * 2.0 * Math.PI);
   private double turnAppliedVolts = 0.0;
 
   private final PIDController turnController = new PIDController(100.0, 0.0, 0.0);
 
-  public ModuleIOSim(final ModuleConstants constants) {
-    this.constants = constants;
-    driveTalon = new TalonFX(constants.driveID());
-    driveTalon.getConfigurator().apply(ModuleIOReal.DRIVE_CONFIG);
+  public ModuleIOSim(final ModuleConstants moduleConstants, final SwerveConstants swerveConstants) {
+    this.moduleConstants = moduleConstants;
+    this.swerveConstants = swerveConstants;
+    driveTalon = new TalonFX(moduleConstants.driveID());
+    driveTalon.getConfigurator().apply(swerveConstants.getDriveConfig());
+
+    driveSim = // Third param is the moment of inertia of the swerve wheel
+        // Used to approximate the robot inertia, not perfect but fine for the
+        // Fidelity of simulation we are targeting
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                driveMotor, 0.025, swerveConstants.getDriveGearRatio()),
+            driveMotor,
+            0);
+
+    turnSim = // Third param is the moment of inertia of the swerve steer
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                DCMotor.getKrakenX60Foc(1), swerveConstants.getTurnGearRatio(), 0.0040),
+            DCMotor.getKrakenX60Foc(1).withReduction(swerveConstants.getTurnGearRatio()),
+            0);
   }
 
   @Override
@@ -78,12 +83,14 @@ public class ModuleIOSim implements ModuleIO {
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
     driveSimState.setRotorVelocity(
-        (driveSim.getAngularVelocityRPM() / 60.0) * Module.DRIVE_GEAR_RATIO);
+        (driveSim.getAngularVelocityRPM() / 60.0) * swerveConstants.getDriveGearRatio());
 
-    inputs.prefix = constants.prefix();
+    inputs.prefix = moduleConstants.prefix();
 
-    inputs.drivePositionMeters = driveSim.getAngularPositionRad() * Module.WHEEL_RADIUS;
-    inputs.driveVelocityMetersPerSec = driveSim.getAngularVelocityRadPerSec() * Module.WHEEL_RADIUS;
+    inputs.drivePositionMeters =
+        driveSim.getAngularPositionRad() * swerveConstants.getWheelRadiusMeters();
+    inputs.driveVelocityMetersPerSec =
+        driveSim.getAngularVelocityRadPerSec() * swerveConstants.getWheelRadiusMeters();
     inputs.driveAppliedVolts = driveSimState.getMotorVoltage();
     inputs.driveCurrentAmps = Math.abs(driveSim.getCurrentDrawAmps());
 

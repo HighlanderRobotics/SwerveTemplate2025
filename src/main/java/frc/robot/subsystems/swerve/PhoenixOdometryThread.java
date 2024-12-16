@@ -43,6 +43,8 @@ import java.util.stream.Collectors;
  * users to benefit from lower latency between devices using CANivore time synchronization.
  */
 public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
+  public static final double ODOMETRY_FREQUENCY_HZ = 250.0;
+
   public enum SignalType {
     DRIVE,
     STEER,
@@ -163,7 +165,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
           () -> {
             Tracer.trace(
                 "wait for all",
-                () -> BaseStatusSignal.waitForAll(2.0 / Module.ODOMETRY_FREQUENCY_HZ, signalArr));
+                () -> BaseStatusSignal.waitForAll(2.0 / ODOMETRY_FREQUENCY_HZ, signalArr));
             try {
               writeLock.lock();
               var filteredSignals =

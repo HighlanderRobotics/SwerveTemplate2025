@@ -13,7 +13,6 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -24,14 +23,11 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.Samples;
 import frc.robot.subsystems.swerve.PhoenixOdometryThread.SignalID;
@@ -41,7 +37,6 @@ import frc.robot.subsystems.vision.VisionHelper;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.utils.Tracer;
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -50,31 +45,7 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class SwerveSubsystem extends SubsystemBase {
-  // Drivebase constants
-  public static final double MAX_LINEAR_SPEED = Units.feetToMeters(16);
-  public static final double MAX_LINEAR_ACCELERATION = 8.0;
-  public static final double TRACK_WIDTH_X = Units.inchesToMeters(21.75);
-  public static final double TRACK_WIDTH_Y = Units.inchesToMeters(21.25);
-  public static final double DRIVE_BASE_RADIUS =
-      Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
-  public static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
-  public static final double MAX_ANGULAR_ACCELERATION = MAX_LINEAR_ACCELERATION / DRIVE_BASE_RADIUS;
-  public static final double MAX_AUTOAIM_SPEED = MAX_LINEAR_SPEED / 4;
-  // Hardware constants
-  public static final int PIGEON_ID = 0;
-
-  public static final double HEADING_VELOCITY_KP = 4.0;
-  public static final double HEADING_VOLTAGE_KP = 4.0;
-
-  public static final ModuleConstants frontLeft =
-      new ModuleConstants(0, "Front Left", 0, 1, 0, Rotation2d.fromRotations(0.377930));
-  public static final ModuleConstants frontRight =
-      new ModuleConstants(1, "Front Right", 2, 3, 1, Rotation2d.fromRotations(-0.071289));
-  public static final ModuleConstants backLeft =
-      new ModuleConstants(2, "Back Left", 4, 5, 2, Rotation2d.fromRotations(0.550781));
-  public static final ModuleConstants backRight =
-      new ModuleConstants(3, "Back Right", 6, 7, 3, Rotation2d.fromRotations(-0.481689));
-
+  private final SwerveConstants constants;
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules; // FL, FR, BL, BR
@@ -106,10 +77,13 @@ public class SwerveSubsystem extends SubsystemBase {
   private Alert missingModuleData = new Alert("Missing Module Data", AlertType.kError);
   private Alert missingGyroData = new Alert("Missing Gyro Data", AlertType.kWarning);
 
-  // Need this annotation so the alert doesn't get mad
-  @SuppressWarnings("resource")
   public SwerveSubsystem(
-      GyroIO gyroIO, VisionIO[] visionIOs, ModuleIO[] moduleIOs, OdometryThreadIO odoThread) {
+      SwerveConstants constants,
+      GyroIO gyroIO,
+      VisionIO[] visionIOs,
+      ModuleIO[] moduleIOs,
+      OdometryThreadIO odoThread) {
+    this.constants = constants;
     this.gyroIO = gyroIO;
     this.odoThread = odoThread;
     odoThread.start();
@@ -125,20 +99,6 @@ public class SwerveSubsystem extends SubsystemBase {
 
     // global static is mildly questionable
     VisionIOSim.pose = () -> Pose3d.kZero; // this::getPose3d;
-
-    // TODO: update to 2025 field
-    try {
-      fieldTags =
-          new AprilTagFieldLayout(
-              Filesystem.getDeployDirectory()
-                  .toPath()
-                  .resolve("vision" + File.separator + "2024-crescendo.json"));
-      System.out.println("Successfully loaded tag map");
-    } catch (Exception e) {
-      System.err.println("Failed to load custom tag map");
-      new Alert("Failed to load custom tag map", AlertType.kWarning).set(true);
-      fieldTags = AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo);
-    }
   }
 
   public void periodic() {
@@ -328,7 +288,10 @@ public class SwerveSubsystem extends SubsystemBase {
         estimator.addVisionMeasurement(
             visionPose.toPose2d(),
             camera.inputs.timestamp,
-            VisionHelper.findVisionMeasurementStdDevs(estPose.get()));
+            VisionHelper.findVisionMeasurementStdDevs(
+                estPose.get(),
+                constants.getVisionPointBlankStdDevs(),
+                constants.getVisionDistanceFactor()));
         if (isNewResult) lastEstTimestamp = camera.inputs.timestamp;
       }
     }
@@ -376,7 +339,7 @@ public class SwerveSubsystem extends SubsystemBase {
     speeds.discretize(0.02);
     final SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(speeds);
     Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, MAX_LINEAR_SPEED);
+    SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, constants.getMaxLinearSpeed());
 
     Logger.recordOutput("Swerve/Target Speeds", speeds);
     Logger.recordOutput("Swerve/Speed Error", speeds.minus(getVelocity()));
@@ -396,12 +359,15 @@ public class SwerveSubsystem extends SubsystemBase {
             Math.sqrt(
                     Math.pow(this.getVelocity().vxMetersPerSecond, 2)
                         + Math.pow(this.getVelocity().vyMetersPerSecond, 2))
-                < MAX_LINEAR_SPEED * 0.9; // TODO tune the magic number (90% of free speed)
+                < constants.getMaxLinearSpeed()
+                    * 0.9; // TODO tune the magic number (90% of free speed)
         optimizedSetpointStates[i] =
             modules[i].runVoltageSetpoint(
                 new SwerveModuleState(
                     // Convert velocity to voltage with kv
-                    optimizedSetpointStates[i].speedMetersPerSecond * 12.0 / MAX_LINEAR_SPEED,
+                    optimizedSetpointStates[i].speedMetersPerSecond
+                        * 12.0
+                        / constants.getMaxLinearSpeed(),
                     optimizedSetpointStates[i].angle),
                 focEnable);
       } else {

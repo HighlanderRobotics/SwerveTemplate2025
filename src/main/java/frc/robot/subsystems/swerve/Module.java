@@ -15,7 +15,6 @@ package frc.robot.subsystems.swerve;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.junction.Logger;
 
 /** Wrapper around ModuleIO and ModuleIOInputs to organize module-level functionality. */
@@ -23,20 +22,6 @@ public class Module {
   // Represents per-module constants
   public record ModuleConstants(
       int id, String prefix, int driveID, int turnID, int cancoderID, Rotation2d cancoderOffset) {}
-
-  // Global constants
-  public static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
-  public static final double ODOMETRY_FREQUENCY_HZ = 250.0;
-
-  // Gear ratios for SDS MK4i L3.5, adjust as necessary
-  // These numbers are taken from SDS's website
-  // They are the gear tooth counts for each stage of the modules' gearboxes
-  public static final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (16.0 / 28.0) * (45.0 / 15.0);
-  public static final double DRIVE_ROTOR_TO_METERS =
-      (Module.DRIVE_GEAR_RATIO) * (1.0 / (Module.WHEEL_RADIUS * 2 * Math.PI));
-  public static final double TURN_GEAR_RATIO = 150.0 / 7.0;
-
-  public static final double TURN_STATOR_CURRENT_LIMIT = 40.0;
 
   private final ModuleIO io;
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
@@ -72,8 +57,7 @@ public class Module {
 
     io.setTurnSetpoint(state.angle);
     io.setDriveSetpoint(
-        state.speedMetersPerSecond
-            * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
+        state.speedMetersPerSecond * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
         forceNewtons);
     Logger.recordOutput(
         String.format("Swerve/%s Module/Force Feedforward", inputs.prefix), forceNewtons);
@@ -93,8 +77,7 @@ public class Module {
 
     io.setTurnSetpoint(state.angle);
     io.setDriveVoltage(
-        state.speedMetersPerSecond
-            * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
+        state.speedMetersPerSecond * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
         focEnabled);
 
     return state;

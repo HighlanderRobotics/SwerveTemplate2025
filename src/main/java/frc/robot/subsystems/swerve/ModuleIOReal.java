@@ -13,17 +13,11 @@
 package frc.robot.subsystems.swerve;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.google.common.collect.ImmutableSet;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -46,43 +40,6 @@ import java.util.Optional;
  * "/Swerve/ModuleX/TurnAbsolutePositionRad"
  */
 public class ModuleIOReal implements ModuleIO {
-  // Constants
-  private static final boolean IS_TURN_MOTOR_INVERTED = true;
-
-  // Constant so sim can access it
-  public static final TalonFXConfiguration DRIVE_CONFIG = new TalonFXConfiguration();
-
-  static {
-    // Current limits
-    // TODO: Do we want to limit supply current?
-    DRIVE_CONFIG.CurrentLimits.SupplyCurrentLimit = 60.0;
-    DRIVE_CONFIG.CurrentLimits.SupplyCurrentLimitEnable = true;
-    // driveConfig.CurrentLimits.SupplyCurrentThreshold = 30.0;
-    // driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
-    DRIVE_CONFIG.CurrentLimits.StatorCurrentLimit = 120.0;
-    DRIVE_CONFIG.CurrentLimits.StatorCurrentLimitEnable = true;
-    // Inverts
-    DRIVE_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    DRIVE_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    // Sensor
-    // Meters per second
-    DRIVE_CONFIG.Feedback.SensorToMechanismRatio = Module.DRIVE_ROTOR_TO_METERS;
-
-    // Current control gains
-    DRIVE_CONFIG.Slot0.kV = 0.0;
-    // kT (stall torque / stall current) converted to linear wheel frame
-    DRIVE_CONFIG.Slot0.kA = (9.37 / 483.0) / Module.DRIVE_ROTOR_TO_METERS; // 3.07135116146;
-    DRIVE_CONFIG.Slot0.kS = 14.0;
-    DRIVE_CONFIG.Slot0.kP = 100.0;
-    DRIVE_CONFIG.Slot0.kD = 1.0;
-
-    DRIVE_CONFIG.TorqueCurrent.TorqueNeutralDeadband = 10.0;
-
-    DRIVE_CONFIG.MotionMagic.MotionMagicCruiseVelocity = SwerveSubsystem.MAX_LINEAR_SPEED;
-    DRIVE_CONFIG.MotionMagic.MotionMagicAcceleration = SwerveSubsystem.MAX_LINEAR_ACCELERATION;
-    // driveConfig.MotionMagic.MotionMagicJerk = SwerveSubsystem.MAX_LINEAR_ACCELERATION / 0.1;
-  }
-
   private final ModuleConstants constants;
 
   // Hardware
@@ -111,51 +68,20 @@ public class ModuleIOReal implements ModuleIO {
       new VelocityTorqueCurrentFOC(0.0).withSlot(1);
   private final MotionMagicVoltage turnPID = new MotionMagicVoltage(0.0).withEnableFOC(true);
 
-  public ModuleIOReal(ModuleConstants constants) {
-    this.constants = constants;
+  public ModuleIOReal(ModuleConstants moduleConstants, SwerveConstants swerveConstants) {
+    this.constants = moduleConstants;
 
-    driveTalon = new TalonFX(constants.driveID(), "canivore");
-    turnTalon = new TalonFX(constants.turnID(), "canivore");
-    cancoder = new CANcoder(constants.cancoderID(), "canivore");
+    driveTalon = new TalonFX(moduleConstants.driveID(), "canivore");
+    turnTalon = new TalonFX(moduleConstants.turnID(), "canivore");
+    cancoder = new CANcoder(moduleConstants.cancoderID(), "canivore");
 
-    driveTalon.getConfigurator().apply(DRIVE_CONFIG);
+    driveTalon.getConfigurator().apply(swerveConstants.getDriveConfig());
 
-    var turnConfig = new TalonFXConfiguration();
-    // Current limits
-    turnConfig.CurrentLimits.StatorCurrentLimit = Module.TURN_STATOR_CURRENT_LIMIT;
-    turnConfig.CurrentLimits.StatorCurrentLimitEnable = true;
-    // Inverts
-    turnConfig.MotorOutput.Inverted =
-        IS_TURN_MOTOR_INVERTED
-            ? InvertedValue.Clockwise_Positive
-            : InvertedValue.CounterClockwise_Positive;
-    turnConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-    // Fused Cancoder
-    turnConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-    turnConfig.Feedback.FeedbackRemoteSensorID = constants.cancoderID();
-    turnConfig.Feedback.RotorToSensorRatio = Module.TURN_GEAR_RATIO;
-    turnConfig.Feedback.SensorToMechanismRatio = 1.0;
-    turnConfig.Feedback.FeedbackRotorOffset =
-        0.0;
-    // Controls Gains
-    turnConfig.Slot0.kV = 2.7935;
-    turnConfig.Slot0.kA = 0.031543;
-    turnConfig.Slot0.kS = 0.28;
-    turnConfig.Slot0.kP = 400.0;
-    turnConfig.Slot0.kD = 0.68275;
-    turnConfig.MotionMagic.MotionMagicCruiseVelocity = 5500 / Module.TURN_GEAR_RATIO;
-    turnConfig.MotionMagic.MotionMagicAcceleration = (5500 * 0.1) / Module.TURN_GEAR_RATIO;
-    turnConfig.ClosedLoopGeneral.ContinuousWrap = true;
+    turnTalon.getConfigurator().apply(swerveConstants.getTurnConfig(moduleConstants.cancoderID()));
 
-    turnTalon.getConfigurator().apply(turnConfig);
-
-    var cancoderConfig = new CANcoderConfiguration();
-    cancoderConfig.MagnetSensor.MagnetOffset = constants.cancoderOffset().getRotations();
-    cancoderConfig.MagnetSensor.SensorDirection =
-        IS_TURN_MOTOR_INVERTED
-            ? SensorDirectionValue.CounterClockwise_Positive
-            : SensorDirectionValue.Clockwise_Positive;
-    cancoder.getConfigurator().apply(cancoderConfig);
+    cancoder
+        .getConfigurator()
+        .apply(swerveConstants.getCancoderConfig(moduleConstants.cancoderOffset()));
 
     drivePosition = driveTalon.getPosition();
     driveVelocity = driveTalon.getVelocity();
@@ -173,17 +99,17 @@ public class ModuleIOReal implements ModuleIO {
         .registerSignals(
             new Registration(
                 driveTalon,
-                Optional.of(constants),
+                Optional.of(moduleConstants),
                 SignalType.DRIVE,
                 ImmutableSet.of(drivePosition)),
             new Registration(
                 turnTalon,
-                Optional.of(constants),
+                Optional.of(moduleConstants),
                 SignalType.STEER,
                 ImmutableSet.of(turnPosition)));
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        Module.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
+        PhoenixOdometryThread.ODOMETRY_FREQUENCY_HZ, drivePosition, turnPosition);
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
         driveVelocity,
