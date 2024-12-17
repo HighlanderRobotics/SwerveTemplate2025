@@ -30,7 +30,6 @@ public interface VisionIO {
     public List<PhotonTrackedTarget> targets = new ArrayList<>();
     public double numTags = 0; // Helps with deserialization
     public Transform3d coprocPNPTransform = new Transform3d();
-    public Pose3d[] targetPose3ds = new Pose3d[0];
     public VisionConstants constants =
         new VisionConstants(
             "Default",

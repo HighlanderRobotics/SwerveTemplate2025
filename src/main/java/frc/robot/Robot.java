@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.simulation.RoboRioDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,6 +24,7 @@ import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOReal;
 import frc.robot.subsystems.vision.VisionIOSim;
+import frc.robot.utils.CommandXboxControllerSubsystem;
 import frc.robot.utils.Tracer;
 import java.util.HashMap;
 import java.util.function.BiConsumer;
@@ -56,6 +58,9 @@ public class Robot extends LoggedRobot {
   public static final RobotType ROBOT_TYPE = RobotType.SIM;
   // For replay to work properly this should match the hardware used in the log
   public static final RobotHardware ROBOT_HARDWARE = RobotHardware.BANSHEE;
+
+  private final CommandXboxControllerSubsystem driver = new CommandXboxControllerSubsystem(0);
+
   private final SwerveSubsystem swerve =
       new SwerveSubsystem(
           ROBOT_HARDWARE.swerveConstants,
@@ -155,6 +160,12 @@ public class Robot extends LoggedRobot {
     Logger.start(); // Start logging! No more data receivers, replay sources, or metadata values may
     // be added.
     SignalLogger.setPath("/media/sda1/");
+
+    // Default Commands
+
+    swerve.setDefaultCommand(
+        swerve.driveTeleop(
+            () -> new ChassisSpeeds(driver.getLeftY(), driver.getLeftX(), driver.getRightX())));
   }
 
   @Override

@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
@@ -43,7 +44,7 @@ public class Vision {
     Logger.processInputs("Apriltag Vision/" + io.getName(), inputs);
   }
 
-  public Optional<EstimatedRobotPose> update(List<PhotonTrackedTarget> targets, double timestamp) {
+  public Optional<EstimatedRobotPose> update(List<PhotonTrackedTarget> targets, double timestamp, AprilTagFieldLayout fieldTags) {
     // Skip if we only have 1 target
     // TODO change
     if (targets.size() < 1) {
@@ -57,6 +58,7 @@ public class Vision {
             inputs.constants.distCoeffs(),
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             inputs.constants.robotToCamera(),
+            fieldTags,
             inputs.coprocPNPTransform);
     // // Reject if estimated pose is in the air or ground
     if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {

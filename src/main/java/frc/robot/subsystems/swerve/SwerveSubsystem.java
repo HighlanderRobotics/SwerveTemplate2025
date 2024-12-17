@@ -54,7 +54,6 @@ public class SwerveSubsystem extends SubsystemBase {
   private SwerveDriveKinematics kinematics;
 
   private final Vision[] cameras;
-  public static AprilTagFieldLayout fieldTags;
 
   /** For delta tracking with PhoenixOdometryThread* */
   private SwerveModulePosition[] lastModulePositions =
@@ -100,7 +99,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // global static is mildly questionable
-    VisionIOSim.pose = () -> Pose3d.kZero; // this::getPose3d;
+    VisionIOSim.pose = this::getPose3d;
   }
 
   public void periodic() {
@@ -280,7 +279,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateVision() {
     for (var camera : cameras) {
       boolean isNewResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
-      var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp);
+      var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp, constants.getFieldTagLayout());
       if (estPose.isPresent()) {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
@@ -294,6 +293,12 @@ public class SwerveSubsystem extends SubsystemBase {
                 estPose.get(),
                 constants.getVisionPointBlankStdDevs(),
                 constants.getVisionDistanceFactor()));
+        Pose3d[] tagPose3ds = new Pose3d[camera.inputs.targets.size()];
+        for (int i = 0; i < camera.inputs.targets.size(); i ++) {
+          var target = camera.inputs.targets.get(i);
+          tagPose3ds[i] = constants.getFieldTagLayout().getTagPose(target.getFiducialId()).get();
+        }
+        Logger.recordOutput("Vision/" + camera.getName() + " Target Pose3ds", tagPose3ds);
         if (isNewResult) lastEstTimestamp = camera.inputs.timestamp;
       }
     }
@@ -313,6 +318,14 @@ public class SwerveSubsystem extends SubsystemBase {
   /** Returns the current odometry rotation as returned by {@link #getPose()}. */
   public Rotation2d getRotation() {
     return getPose().getRotation();
+  }
+
+  /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
+  @AutoLogOutput(key = "SwerveStates/Measured")
+  private SwerveModuleState[] getModuleStates() {
+    SwerveModuleState[] states =
+        Arrays.stream(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
+    return states;
   }
 
   @AutoLogOutput(key = "Odometry/Velocity")
@@ -367,11 +380,12 @@ public class SwerveSubsystem extends SubsystemBase {
             modules[i].runVoltageSetpoint(
                 new SwerveModuleState(
                     // Convert velocity to voltage with kv
-                    optimizedSetpointStates[i].speedMetersPerSecond
-                        * 12.0
-                        / constants.getMaxLinearSpeed(),
-                    optimizedSetpointStates[i].angle),
+                    setpointStates[i].speedMetersPerSecond * 12.0 / constants.getMaxLinearSpeed(),
+                    setpointStates[i].angle),
                 focEnable);
+
+        // Have to put something here to log properly
+        forceSetpoints[i] = new SwerveModuleState();
       } else {
         // Use closed loop current control (automated actions)
         // Calculate robot forces
@@ -453,5 +467,14 @@ public class SwerveSubsystem extends SubsystemBase {
         },
         xForces,
         yForces);
+  }
+
+  public Command driveTeleop(Supplier<ChassisSpeeds> speeds) {
+    return this.run(
+        () -> {
+          ChassisSpeeds speed = speeds.get();
+          speed.toRobotRelativeSpeeds(getRotation());
+          this.drive(speed, true, new double[4], new double[4]);
+        });
   }
 }

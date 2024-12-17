@@ -16,14 +16,11 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     table.put("Timestamp", timestamp);
     table.put("Latency", latency);
 
-    targetPose3ds = new Pose3d[targets.size()];
     for (int i = 0; i < targets.size(); i++) {
       VisionHelper.Logging.logPhotonTrackedTarget(targets.get(i), table, String.valueOf(i));
-      targetPose3ds[i] = SwerveSubsystem.fieldTags.getTagPose(targets.get(i).getFiducialId()).get();
     }
     table.put("NumTags", targets.size());
     table.put("Pose", coprocPNPTransform);
-    table.put("Target Pose3ds", targetPose3ds);
     VisionHelper.Logging.logVisionConstants(constants, table);
   }
 
@@ -36,7 +33,6 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     }
     numTags = table.get("NumTags", numTags);
     coprocPNPTransform = table.get("Pose", coprocPNPTransform);
-    targetPose3ds = table.get("Target Pose3ds", targetPose3ds);
     constants = VisionHelper.Logging.getLoggedVisionConstants(table);
   }
 
@@ -47,7 +43,6 @@ public class VisionIOInputsLogged extends VisionIO.VisionIOInputs
     copy.targets = this.targets;
     copy.numTags = this.numTags;
     copy.coprocPNPTransform = this.coprocPNPTransform;
-    copy.targetPose3ds = this.targetPose3ds;
     return copy;
   }
 }

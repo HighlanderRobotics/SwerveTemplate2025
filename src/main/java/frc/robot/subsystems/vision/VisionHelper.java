@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -199,11 +200,12 @@ public class VisionHelper {
       Matrix<N8, N1> distCoeffs,
       PoseStrategy strat,
       Transform3d robotToCamera,
+      AprilTagFieldLayout fieldTags,
       Transform3d bestTF) {
     Optional<EstimatedRobotPose> estimatedPose;
     switch (strat) {
       case LOWEST_AMBIGUITY:
-        estimatedPose = lowestAmbiguityStrategy(targets, timestamp, robotToCamera);
+        estimatedPose = lowestAmbiguityStrategy(targets, timestamp, robotToCamera, fieldTags);
         break;
       case MULTI_TAG_PNP_ON_COPROCESSOR:
         estimatedPose =
@@ -213,6 +215,7 @@ public class VisionHelper {
                 Optional.of(cameraMatrix),
                 Optional.of(distCoeffs),
                 robotToCamera,
+                fieldTags,
                 PoseStrategy.LOWEST_AMBIGUITY,
                 bestTF);
         break;
@@ -248,6 +251,7 @@ public class VisionHelper {
       Optional<Matrix<N3, N3>> cameraMatrix,
       Optional<Matrix<N8, N1>> distCoeffs,
       Transform3d robotToCamera,
+      AprilTagFieldLayout fieldTags,
       PoseStrategy multiTagFallbackStrategy,
       Transform3d bestTF) {
     if (!bestTF.equals(new Transform3d())) {
@@ -255,7 +259,7 @@ public class VisionHelper {
       var best =
           new Pose3d()
               .plus(best_tf) // field-to-camera
-              .relativeTo(SwerveSubsystem.fieldTags.getOrigin())
+              .relativeTo(fieldTags.getOrigin())
               .plus(robotToCamera.inverse()); // field-to-robot
       return Optional.of(
           new EstimatedRobotPose(
@@ -268,6 +272,7 @@ public class VisionHelper {
           distCoeffs.get(),
           multiTagFallbackStrategy,
           robotToCamera,
+          fieldTags,
           new Transform3d());
     }
   }
@@ -281,7 +286,7 @@ public class VisionHelper {
    *     estimation.
    */
   private static Optional<EstimatedRobotPose> lowestAmbiguityStrategy(
-      List<PhotonTrackedTarget> targets, double timestamp, Transform3d robotToCamera) {
+      List<PhotonTrackedTarget> targets, double timestamp, Transform3d robotToCamera, AprilTagFieldLayout fieldTags) {
     PhotonTrackedTarget lowestAmbiguityTarget = null;
 
     double lowestAmbiguityScore = 10;
@@ -305,7 +310,7 @@ public class VisionHelper {
     if (lowestAmbiguityTarget == null) return Optional.empty();
     int targetFiducialId = lowestAmbiguityTarget.getFiducialId();
 
-    Optional<Pose3d> targetPosition = SwerveSubsystem.fieldTags.getTagPose(targetFiducialId);
+    Optional<Pose3d> targetPosition = fieldTags.getTagPose(targetFiducialId);
 
     if (targetPosition.isEmpty()) {
       DriverStation.reportError(
