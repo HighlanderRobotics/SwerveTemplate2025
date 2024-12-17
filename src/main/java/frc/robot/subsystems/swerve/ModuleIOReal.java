@@ -71,9 +71,9 @@ public class ModuleIOReal implements ModuleIO {
   public ModuleIOReal(ModuleConstants moduleConstants, SwerveConstants swerveConstants) {
     this.constants = moduleConstants;
 
-    driveTalon = new TalonFX(moduleConstants.driveID(), "canivore");
-    turnTalon = new TalonFX(moduleConstants.turnID(), "canivore");
-    cancoder = new CANcoder(moduleConstants.cancoderID(), "canivore");
+    driveTalon = new TalonFX(moduleConstants.driveID(), "*");
+    turnTalon = new TalonFX(moduleConstants.turnID(), "*");
+    cancoder = new CANcoder(moduleConstants.cancoderID(), "*");
 
     driveTalon.getConfigurator().apply(swerveConstants.getDriveConfig());
 

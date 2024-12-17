@@ -34,7 +34,7 @@ public class GyroIOPigeon2 implements GyroIO {
   private final StatusSignal<AngularVelocity> yawVelocity;
 
   public GyroIOPigeon2(int id) {
-    pigeon = new Pigeon2(id, "canivore");
+    pigeon = new Pigeon2(id, "*");
     yaw = pigeon.getYaw();
     yawVelocity = pigeon.getAngularVelocityZWorld();
     var config = new Pigeon2Configuration();
