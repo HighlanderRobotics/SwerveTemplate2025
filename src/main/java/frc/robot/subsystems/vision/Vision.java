@@ -44,7 +44,8 @@ public class Vision {
     Logger.processInputs("Apriltag Vision/" + io.getName(), inputs);
   }
 
-  public Optional<EstimatedRobotPose> update(List<PhotonTrackedTarget> targets, double timestamp, AprilTagFieldLayout fieldTags) {
+  public Optional<EstimatedRobotPose> update(
+      List<PhotonTrackedTarget> targets, double timestamp, AprilTagFieldLayout fieldTags) {
     // Skip if we only have 1 target
     // TODO change
     if (targets.size() < 1) {

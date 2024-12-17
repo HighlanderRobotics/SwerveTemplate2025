@@ -12,7 +12,6 @@
 
 package frc.robot.subsystems.swerve;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -279,7 +278,9 @@ public class SwerveSubsystem extends SubsystemBase {
   private void updateVision() {
     for (var camera : cameras) {
       boolean isNewResult = Math.abs(camera.inputs.timestamp - lastEstTimestamp) > 1e-5;
-      var estPose = camera.update(camera.inputs.targets, camera.inputs.timestamp, constants.getFieldTagLayout());
+      var estPose =
+          camera.update(
+              camera.inputs.targets, camera.inputs.timestamp, constants.getFieldTagLayout());
       if (estPose.isPresent()) {
         var visionPose = estPose.get().estimatedPose;
         // Sets the pose on the sim field
@@ -294,7 +295,7 @@ public class SwerveSubsystem extends SubsystemBase {
                 constants.getVisionPointBlankStdDevs(),
                 constants.getVisionDistanceFactor()));
         Pose3d[] tagPose3ds = new Pose3d[camera.inputs.targets.size()];
-        for (int i = 0; i < camera.inputs.targets.size(); i ++) {
+        for (int i = 0; i < camera.inputs.targets.size(); i++) {
           var target = camera.inputs.targets.get(i);
           tagPose3ds[i] = constants.getFieldTagLayout().getTagPose(target.getFiducialId()).get();
         }

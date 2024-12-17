@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.hal.simulation.RoboRioDataJNI;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -165,7 +166,19 @@ public class Robot extends LoggedRobot {
 
     swerve.setDefaultCommand(
         swerve.driveTeleop(
-            () -> new ChassisSpeeds(driver.getLeftY(), driver.getLeftX(), driver.getRightX())));
+            () ->
+                new ChassisSpeeds(
+                    modifyJoystick(driver.getLeftY())
+                        * ROBOT_HARDWARE.swerveConstants.getMaxLinearSpeed(),
+                    modifyJoystick(driver.getLeftX())
+                        * ROBOT_HARDWARE.swerveConstants.getMaxLinearSpeed(),
+                    modifyJoystick(driver.getRightX())
+                        * ROBOT_HARDWARE.swerveConstants.getMaxAngularSpeed())));
+  }
+
+  /** Scales a joystick value for teleop driving */
+  private static double modifyJoystick(double val) {
+    return MathUtil.applyDeadband(Math.abs(Math.pow(val, 2)) * Math.signum(val), 0.02);
   }
 
   @Override

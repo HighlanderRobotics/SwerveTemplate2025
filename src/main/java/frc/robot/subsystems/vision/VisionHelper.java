@@ -19,7 +19,6 @@ import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Robot;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 import java.util.ArrayList;
 import java.util.List;
@@ -286,7 +285,10 @@ public class VisionHelper {
    *     estimation.
    */
   private static Optional<EstimatedRobotPose> lowestAmbiguityStrategy(
-      List<PhotonTrackedTarget> targets, double timestamp, Transform3d robotToCamera, AprilTagFieldLayout fieldTags) {
+      List<PhotonTrackedTarget> targets,
+      double timestamp,
+      Transform3d robotToCamera,
+      AprilTagFieldLayout fieldTags) {
     PhotonTrackedTarget lowestAmbiguityTarget = null;
 
     double lowestAmbiguityScore = 10;
