@@ -38,6 +38,7 @@ public class ModuleIOSim implements ModuleIO {
   private final SwerveConstants swerveConstants;
 
   private static final DCMotor driveMotor = DCMotor.getKrakenX60Foc(1);
+  private static final DCMotor steerMotor = DCMotor.getKrakenX60Foc(1);
   private final TalonFX driveTalon;
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityTorqueCurrentFOC driveControlVelocity =
@@ -69,8 +70,10 @@ public class ModuleIOSim implements ModuleIO {
     turnSim = // Third param is the moment of inertia of the swerve steer
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                DCMotor.getKrakenX60Foc(1), swerveConstants.getTurnGearRatio(), 0.0040),
-            DCMotor.getKrakenX60Foc(1).withReduction(swerveConstants.getTurnGearRatio()),
+                steerMotor,
+                0.0040,
+                swerveConstants.getTurnGearRatio()),
+            steerMotor,
             0,
             0);
   }

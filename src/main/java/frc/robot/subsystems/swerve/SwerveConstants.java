@@ -10,35 +10,47 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 
-public interface SwerveConstants {
+public abstract class SwerveConstants {
+  private static boolean instantiated = false;
+  private static final Alert multipleInstancesAlert = new Alert("Multiple Swerve Constants Files", AlertType.kError);
+
+  public SwerveConstants() {
+    if (instantiated) {
+      multipleInstancesAlert.set(true);
+    }
+    instantiated = true;
+  }
+
   // Drivebase Constants
-  public double getMaxLinearSpeed();
+  public abstract double getMaxLinearSpeed();
 
-  public double getMaxLinearAcceleration();
+  public abstract double getMaxLinearAcceleration();
 
-  public double getTrackWidthX();
+  public abstract double getTrackWidthX();
 
-  public double getTrackWidthY();
+  public abstract double getTrackWidthY();
 
-  public default double getDriveBaseRadius() {
+  public double getDriveBaseRadius() {
     return Math.hypot(getTrackWidthX() / 2.0, getTrackWidthY() / 2.0);
   }
 
-  public default double getMaxAngularSpeed() {
+  public double getMaxAngularSpeed() {
     return getMaxLinearSpeed() / getDriveBaseRadius();
   }
   /**
    * Derives angular acceleration from linear acceleration. This is a bad model because the MOI of a
    * robot is different from its mass.
    */
-  public default double getMaxAngularAcceleration() {
+  public double getMaxAngularAcceleration() {
     return getMaxLinearAcceleration() / getDriveBaseRadius();
   }
   /** Returns an array of module translations. */
-  public default Translation2d[] getModuleTranslations() {
+  public Translation2d[] getModuleTranslations() {
     return new Translation2d[] {
       new Translation2d(getTrackWidthX() / 2.0, getTrackWidthY() / 2.0),
       new Translation2d(getTrackWidthX() / 2.0, -getTrackWidthY() / 2.0),
@@ -47,53 +59,53 @@ public interface SwerveConstants {
     };
   }
 
-  public int getGyroID();
+  public abstract int getGyroID();
 
-  public double getHeadingVelocityKP();
+  public abstract double getHeadingVelocityKP();
 
-  public double getHeadingVoltageKP();
+  public abstract double getHeadingVoltageKP();
 
-  public ModuleConstants getFrontLeftModule();
+  public abstract ModuleConstants getFrontLeftModule();
 
-  public ModuleConstants getFrontRightModule();
+  public abstract ModuleConstants getFrontRightModule();
 
-  public ModuleConstants getBackLeftModule();
+  public abstract ModuleConstants getBackLeftModule();
 
-  public ModuleConstants getBackRightModule();
+  public abstract ModuleConstants getBackRightModule();
 
-  public AprilTagFieldLayout getFieldTagLayout();
+  public abstract AprilTagFieldLayout getFieldTagLayout();
 
-  public VisionConstants[] getVisionConstants();
+  public abstract VisionConstants[] getVisionConstants();
 
-  public default double getWheelRadiusMeters() {
+  public double getWheelRadiusMeters() {
     return Units.inchesToMeters(2.0);
   }
 
-  public double getDriveGearRatio();
+  public abstract double getDriveGearRatio();
 
-  public default double getDriveRotorToMeters() {
+  public double getDriveRotorToMeters() {
     return getDriveGearRatio() / (getWheelRadiusMeters() * 2 * Math.PI);
   }
   /** SDS Mk4 line default. */
-  public default double getTurnGearRatio() {
+  public double getTurnGearRatio() {
     return 150.0 / 7.0;
   }
   /** Defaults to inverted ie Mk4i, Mk4n. */
-  public default boolean getTurnMotorInverted() {
+  public boolean getTurnMotorInverted() {
     return true;
   }
 
-  public TalonFXConfiguration getDriveConfig();
+  public abstract TalonFXConfiguration getDriveConfig();
 
-  public TalonFXConfiguration getTurnConfig(int cancoderID);
+  public abstract TalonFXConfiguration getTurnConfig(int cancoderID);
 
-  public CANcoderConfiguration getCancoderConfig(Rotation2d cancoderOffset);
+  public abstract CANcoderConfiguration getCancoderConfig(Rotation2d cancoderOffset);
 
-  public default Matrix<N3, N1> getVisionPointBlankStdDevs() {
+  public Matrix<N3, N1> getVisionPointBlankStdDevs() {
     return new Matrix<N3, N1>(Nat.N3(), Nat.N1(), new double[] {0.4, 0.4, 1});
   }
 
-  public default double getVisionDistanceFactor() {
+  public double getVisionDistanceFactor() {
     return 0.5;
   }
 }
