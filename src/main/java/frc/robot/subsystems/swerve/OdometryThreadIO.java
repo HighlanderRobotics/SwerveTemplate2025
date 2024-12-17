@@ -15,6 +15,7 @@ import java.util.Set;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
+/** Provides an interface for high frequency sampling of robot odometry. */
 public interface OdometryThreadIO {
   public static final int GYRO_MODULE_ID = -1;
 

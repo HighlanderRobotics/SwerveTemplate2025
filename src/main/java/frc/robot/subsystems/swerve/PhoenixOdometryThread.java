@@ -37,10 +37,10 @@ import java.util.stream.Collectors;
 /**
  * Provides an interface for high frequency sampling of Phoenix devices.
  *
- * <p>This version is intended for Phoenix 6 devices on both the RIO and CANivore buses. CAN FD
+ * <p>This version is intended for Phoenix 6 devices on the CANivore bus. CAN FD
  * compliant devices are required (TalonFX, CANCoder, Pigeon 2.0, CANdle) due to the use of the
- * "waitForAll" blocking method to enable more consistent sampling. This also allows Phoenix Pro
- * users to benefit from lower latency between devices using CANivore time synchronization.
+ * "waitForAll" blocking method to enable more consistent sampling. This also allows us
+ * to benefit from lower latency between devices using CANivore time synchronization.
  */
 public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
   public static final double ODOMETRY_FREQUENCY_HZ = 250.0;
@@ -53,7 +53,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     // But we don't!
   }
 
-  /** modID should be GYRO_MODULE_ID for the gyro signal */
+  /** modID should be OdometryThreadIO.GYRO_MODULE_ID for the gyro signal */
   public record SignalID(SignalType type, int modID) {}
 
   public record Registration(
