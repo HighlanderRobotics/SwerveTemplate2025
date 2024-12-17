@@ -28,7 +28,8 @@ import java.io.File;
 
 public class BansheeSwerveConstants extends SwerveConstants {
   private AprilTagFieldLayout fieldTags;
-  private static Alert tagLoadFailureAlert = new Alert("Failed to load custom tag map", AlertType.kWarning);
+  private static Alert tagLoadFailureAlert =
+      new Alert("Failed to load custom tag map", AlertType.kWarning);
 
   public BansheeSwerveConstants() {
     super();

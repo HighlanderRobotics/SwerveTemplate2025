@@ -70,9 +70,7 @@ public class ModuleIOSim implements ModuleIO {
     turnSim = // Third param is the moment of inertia of the swerve steer
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                steerMotor,
-                0.0040,
-                swerveConstants.getTurnGearRatio()),
+                steerMotor, 0.0040, swerveConstants.getTurnGearRatio()),
             steerMotor,
             0,
             0);

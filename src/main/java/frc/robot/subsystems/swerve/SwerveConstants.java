@@ -17,7 +17,8 @@ import frc.robot.subsystems.vision.Vision.VisionConstants;
 
 public abstract class SwerveConstants {
   private static boolean instantiated = false;
-  private static final Alert multipleInstancesAlert = new Alert("Multiple Swerve Constants Files", AlertType.kError);
+  private static final Alert multipleInstancesAlert =
+      new Alert("Multiple Swerve Constants Files", AlertType.kError);
 
   public SwerveConstants() {
     if (instantiated) {

@@ -384,6 +384,8 @@ public class SwerveSubsystem extends SubsystemBase {
                     setpointStates[i].speedMetersPerSecond * 12.0 / constants.getMaxLinearSpeed(),
                     setpointStates[i].angle),
                 focEnable);
+        // Convert voltage back to m/s
+        optimizedSetpointStates[i].speedMetersPerSecond *= constants.getMaxLinearSpeed() / 12.0;
 
         // Have to put something here to log properly
         forceSetpoints[i] = new SwerveModuleState();
