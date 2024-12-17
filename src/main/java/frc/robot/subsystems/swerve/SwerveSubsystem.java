@@ -24,6 +24,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.swerve.OdometryThreadIO.OdometryThreadIOInputs;
@@ -476,7 +477,10 @@ public class SwerveSubsystem extends SubsystemBase {
     return this.run(
         () -> {
           ChassisSpeeds speed = speeds.get();
-          speed.toRobotRelativeSpeeds(getRotation());
+          speed.toRobotRelativeSpeeds(
+              DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue
+                  ? getPose().getRotation()
+                  : getPose().getRotation().minus(Rotation2d.fromDegrees(180)));
           this.drive(speed, true, new double[4], new double[4]);
         });
   }
