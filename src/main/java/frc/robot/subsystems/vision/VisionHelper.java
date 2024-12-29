@@ -201,7 +201,7 @@ public class VisionHelper {
       Transform3d robotToCamera,
       AprilTagFieldLayout fieldTags,
       Transform3d bestTF) {
-    Optional<EstimatedRobotPose> estimatedPose;
+    final Optional<EstimatedRobotPose> estimatedPose;
     switch (strat) {
       case LOWEST_AMBIGUITY:
         estimatedPose = lowestAmbiguityStrategy(targets, timestamp, robotToCamera, fieldTags);

@@ -102,7 +102,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
     registerSignals(registrations.toArray(new Registration[] {}));
   }
 
-  // Returns a handle which can be used to collect the last 20 signal results
+  /** Adds each registration to the signals array and set */
   public void registerSignals(Registration... registrations) {
     var writeLock = journalLock.writeLock();
 

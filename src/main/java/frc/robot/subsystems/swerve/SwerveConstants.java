@@ -15,6 +15,11 @@ import edu.wpi.first.wpilibj.Alert.AlertType;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
 import frc.robot.subsystems.vision.Vision.VisionConstants;
 
+/**
+ * A template for constants for a swerve drivetrain. This template presumes rectangular modules that
+ * are symmetric around the center of the robot, talonfxs + cancoders, and that all modules have the
+ * same gear ratios Subclass this to make constants for a specific robot.
+ */
 public abstract class SwerveConstants {
   private static boolean instantiated = false;
   private static final Alert multipleInstancesAlert =
