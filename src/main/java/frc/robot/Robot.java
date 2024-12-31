@@ -56,7 +56,7 @@ public class Robot extends LoggedRobot {
     }
   }
 
-  public static final RobotType ROBOT_TYPE = RobotType.SIM;
+  public static final RobotType ROBOT_TYPE = Robot.isReal() ? RobotType.REAL : RobotType.SIM;
   // For replay to work properly this should match the hardware used in the log
   public static final RobotHardware ROBOT_HARDWARE = RobotHardware.BANSHEE;
 
@@ -163,6 +163,8 @@ public class Robot extends LoggedRobot {
     SignalLogger.setPath("/media/sda1/");
 
     // Default Commands
+
+    driver.setDefaultCommand(driver.rumbleCmd(0.0, 0.0));
 
     swerve.setDefaultCommand(
         swerve.driveTeleop(
