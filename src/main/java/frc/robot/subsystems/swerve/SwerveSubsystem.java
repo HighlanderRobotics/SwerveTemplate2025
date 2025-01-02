@@ -205,7 +205,7 @@ public class SwerveSubsystem extends SubsystemBase {
       // missing some data :(
       if (hasNullModulePosition) {
         missingModuleData.set(true);
-        if (!gyroInputs.connected
+        if (!gyroInputs.isConnected
             || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
                 == null) {
           missingGyroData.set(true);
@@ -231,7 +231,7 @@ public class SwerveSubsystem extends SubsystemBase {
       // sample in x, y, and theta based only on the modules, without
       // the gyro. The gyro is always disconnected in simulation.
       Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-      if (!gyroInputs.connected
+      if (!gyroInputs.isConnected
           || sample.values().get(new SignalID(SignalType.GYRO, OdometryThreadIO.GYRO_MODULE_ID))
               == null) {
         missingGyroData.set(true);

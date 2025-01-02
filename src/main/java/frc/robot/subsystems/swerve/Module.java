@@ -36,7 +36,8 @@ public class Module {
   }
 
   public void periodic() {
-    Logger.processInputs(String.format("Swerve/%s Module", inputs.prefix), inputs);
+    Logger.processInputs(
+        new StringBuilder("Swerve/").append(inputs.prefix).append(" Module").toString(), inputs);
   }
 
   /** Runs the module closed loop with the specified setpoint state. Returns the optimized state. */
@@ -60,7 +61,8 @@ public class Module {
         state.speedMetersPerSecond * Math.cos(state.angle.minus(inputs.turnPosition).getRadians()),
         forceNewtons);
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Force Feedforward", inputs.prefix), forceNewtons);
+        new StringBuilder("Swerve/").append(inputs.prefix).append(" Force Feedforward").toString(),
+        forceNewtons);
     return state;
   }
 
@@ -72,7 +74,7 @@ public class Module {
     // Optimize state based on current angle
     state.optimize(getAngle());
     Logger.recordOutput(
-        String.format("Swerve/%s Module/Voltage Target", inputs.prefix),
+        new StringBuilder("Swerve/").append(inputs.prefix).append(" Voltage Target").toString(),
         state.speedMetersPerSecond);
 
     io.setTurnSetpoint(state.angle);

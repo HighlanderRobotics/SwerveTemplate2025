@@ -197,12 +197,10 @@ public class BansheeSwerveConstants extends SwerveConstants {
 
   @Override
   public TalonFXConfiguration getDriveConfig() {
-    TalonFXConfiguration driveConfig = new TalonFXConfiguration();
+    final var driveConfig = new TalonFXConfiguration();
     // Current limits
     driveConfig.CurrentLimits.SupplyCurrentLimit = 60.0;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    // driveConfig.CurrentLimits.SupplyCurrentThreshold = 30.0;
-    // driveConfig.CurrentLimits.SupplyTimeThreshold = 0.5;
     driveConfig.CurrentLimits.StatorCurrentLimit = 120.0;
     driveConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     // Inverts
@@ -229,7 +227,7 @@ public class BansheeSwerveConstants extends SwerveConstants {
 
   @Override
   public TalonFXConfiguration getTurnConfig(int cancoderID) {
-    var turnConfig = new TalonFXConfiguration();
+    final var turnConfig = new TalonFXConfiguration();
     // Current limits
     turnConfig.CurrentLimits.StatorCurrentLimit = 40.0;
     turnConfig.CurrentLimits.StatorCurrentLimitEnable = true;
@@ -259,7 +257,7 @@ public class BansheeSwerveConstants extends SwerveConstants {
 
   @Override
   public CANcoderConfiguration getCancoderConfig(Rotation2d cancoderOffset) {
-    var cancoderConfig = new CANcoderConfiguration();
+    final var cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = cancoderOffset.getRotations();
     cancoderConfig.MagnetSensor.SensorDirection =
         getTurnMotorInverted()

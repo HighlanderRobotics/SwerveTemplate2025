@@ -136,8 +136,10 @@ public class VisionHelper {
         detectedCorners.add(new TargetCorner(detectedCornersX[i], detectedCornersY[i]));
         minAreaRectCorners.add(new TargetCorner(minAreaRectCornersX[i], minAreaRectCornersY[i]));
       }
+
       Transform3d pose = getLoggedTransform3d(translation, rotation);
       Transform3d altPose = getLoggedTransform3d(altTranslation, altRotation);
+
       return (new PhotonTrackedTarget(
           table.get("Tags/Yaw " + name, -1.0),
           table.get("Tags/Pitch " + name, -1.0),
