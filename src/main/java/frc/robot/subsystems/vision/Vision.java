@@ -51,6 +51,7 @@ public class Vision {
     if (targets.size() < 1) {
       return Optional.empty();
     }
+
     var estPose =
         VisionHelper.update(
             targets,
@@ -61,10 +62,12 @@ public class Vision {
             inputs.constants.robotToCamera(),
             fieldTags,
             inputs.coprocPNPTransform);
-    // // Reject if estimated pose is in the air or ground
+
+    // Reject if estimated pose is in the air or ground
     if (estPose.isPresent() && Math.abs(estPose.get().estimatedPose.getZ()) > 0.25) {
       return Optional.empty();
     }
+
     return estPose;
   }
 

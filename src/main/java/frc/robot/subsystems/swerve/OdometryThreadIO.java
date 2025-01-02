@@ -24,10 +24,10 @@ public interface OdometryThreadIO {
 
     @Override
     public void toLog(LogTable table) {
-      var timestamps = sampledStates.stream().mapToDouble(Samples::timestamp).toArray();
-      Set<Integer> modIds = new HashSet();
+      final var timestamps = sampledStates.stream().mapToDouble(Samples::timestamp).toArray();
+      final Set<Integer> modIds = new HashSet();
       for (int i = 0; i < sampledStates.size(); i++) {
-        var sample = sampledStates.get(i);
+        final var sample = sampledStates.get(i);
         for (var signal : sample.values().entrySet()) {
           table.put(
               "Data/" + i + " " + signal.getKey().type().toString() + " " + signal.getKey().modID(),
@@ -44,8 +44,8 @@ public interface OdometryThreadIO {
     @Override
     public void fromLog(LogTable table) {
       sampledStates = List.of();
-      var modIds = table.get("Module IDs").getIntegerArray();
-      var timestamps = table.get("Timestamps").getDoubleArray();
+      final var modIds = table.get("Module IDs").getIntegerArray();
+      final var timestamps = table.get("Timestamps").getDoubleArray();
       for (int i = 0; i < sampledStates.size(); i++) {
         var timestamp = timestamps[i];
         try {
