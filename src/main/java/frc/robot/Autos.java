@@ -53,4 +53,11 @@ public class Autos {
     routine.active().whileTrue(Commands.sequence(routine.resetOdometry(traj), traj.cmd()));
     return routine.cmd();
   }
+
+  public Command getTestSprint() {
+    var routine = factory.newRoutine("Test Sprint");
+    var traj = routine.trajectory("Sprint Test");
+    routine.active().whileTrue(Commands.sequence(routine.resetOdometry(traj), traj.cmd()));
+    return routine.cmd();
+  }
 }
