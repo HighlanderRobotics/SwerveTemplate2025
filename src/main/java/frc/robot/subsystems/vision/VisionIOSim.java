@@ -46,7 +46,7 @@ public class VisionIOSim implements VisionIO {
     try {
       var field = AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo);
       field.setOrigin(OriginPosition.kBlueAllianceWallRightSide);
-      sim.addAprilTags(field);
+      // sim.addAprilTags(field);
     } catch (Exception e) {
       e.printStackTrace();
     }

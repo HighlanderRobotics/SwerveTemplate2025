@@ -444,9 +444,8 @@ public class SwerveSubsystem extends SubsystemBase {
               xController.calculate(pose.getX(), sample.x),
               yController.calculate(pose.getY(), sample.y),
               thetaController.calculate(pose.getRotation().getRadians(), sample.heading));
-      var feedforward = new ChassisSpeeds(sample.vx, sample.vy, sample.omega);
-      feedforward.toRobotRelativeSpeeds(getRotation());
-      var speeds = feedforward.plus(feedback);
+      var speeds = new ChassisSpeeds(sample.vx, sample.vy, sample.omega).plus(feedback);
+      speeds.toRobotRelativeSpeeds(getRotation());
       Logger.recordOutput("Choreo/Feedback + FF Target Speeds Robot Relative", speeds);
       this.drive(speeds, false, sample.moduleForcesX(), sample.moduleForcesY());
     };
