@@ -431,6 +431,7 @@ public class SwerveSubsystem extends SubsystemBase {
     final PIDController yController = new PIDController(10.0, 0.0, 0.0);
     final PIDController thetaController =
         new PIDController(constants.getHeadingVelocityKP(), 0.0, 0.0);
+    thetaController.enableContinuousInput(-Math.PI, Math.PI);
     return (sample) -> {
       final var pose = getPose();
       Logger.recordOutput(

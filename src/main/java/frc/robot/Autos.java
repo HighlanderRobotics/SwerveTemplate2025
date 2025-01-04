@@ -6,6 +6,8 @@ package frc.robot;
 
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoFactory.AutoBindings;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
@@ -26,7 +28,12 @@ public class Autos {
             swerve,
             new AutoBindings(), // Leave empty, we can do bindings per-auto
             (traj, edge) -> {
-              Logger.recordOutput("Choreo/Active Traj", traj.getPoses());
+              Logger.recordOutput(
+                  "Choreo/Active Traj",
+                  DriverStation.getAlliance().isPresent()
+                          && DriverStation.getAlliance().get().equals(Alliance.Blue)
+                      ? traj.getPoses()
+                      : traj.flipped().getPoses());
             });
   }
 
