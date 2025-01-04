@@ -433,15 +433,22 @@ public class SwerveSubsystem extends SubsystemBase {
         new PIDController(constants.getHeadingVelocityKP(), 0.0, 0.0);
     return (sample) -> {
       final var pose = getPose();
-      this.drive(
+      Logger.recordOutput(
+          "Choreo/Target Pose",
+          new Pose2d(sample.x, sample.y, Rotation2d.fromRadians(sample.heading)));
+      Logger.recordOutput(
+          "Choreo/Target Speeds Field Relative",
+          new ChassisSpeeds(sample.vx, sample.vy, sample.omega));
+      var feedback =
           new ChassisSpeeds(
-              sample.vx + xController.calculate(pose.getX(), sample.x),
-              sample.vy + yController.calculate(pose.getY(), sample.y),
-              sample.omega
-                  + thetaController.calculate(pose.getRotation().getRadians(), sample.heading)),
-          false,
-          sample.moduleForcesX(),
-          sample.moduleForcesY());
+              xController.calculate(pose.getX(), sample.x),
+              yController.calculate(pose.getY(), sample.y),
+              thetaController.calculate(pose.getRotation().getRadians(), sample.heading));
+      var feedforward = new ChassisSpeeds(sample.vx, sample.vy, sample.omega);
+      feedforward.toRobotRelativeSpeeds(getRotation());
+      var speeds = feedforward.plus(feedback);
+      Logger.recordOutput("Choreo/Feedback + FF Target Speeds Robot Relative", speeds);
+      this.drive(speeds, false, sample.moduleForcesX(), sample.moduleForcesY());
     };
   }
 

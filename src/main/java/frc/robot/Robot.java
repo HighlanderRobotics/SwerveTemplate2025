@@ -174,9 +174,11 @@ public class Robot extends LoggedRobot {
 
     autos = new Autos(swerve);
     autoChooser.addDefaultOption("None", autos.getNoneAuto());
-    
+    autoChooser.addOption("Triangle Test", autos.getTestTriangle());
+
     // Run auto when auto starts. Matches Choreolib's defer impl
-    RobotModeTriggers.autonomous().whileTrue(Commands.defer(() -> autoChooser.get().asProxy(), Set.of()));
+    RobotModeTriggers.autonomous()
+        .whileTrue(Commands.defer(() -> autoChooser.get().asProxy(), Set.of()));
 
     // Default Commands
 

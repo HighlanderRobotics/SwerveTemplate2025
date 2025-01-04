@@ -23,6 +23,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.subsystems.swerve.Module.ModuleConstants;
+import org.littletonrobotics.junction.Logger;
 
 /**
  * Physics sim implementation of module IO.
@@ -42,7 +43,7 @@ public class ModuleIOSim implements ModuleIO {
   private final TalonFX driveTalon;
   private final VoltageOut driveVoltage = new VoltageOut(0.0).withEnableFOC(true);
   private final VelocityTorqueCurrentFOC driveControlVelocity =
-      new VelocityTorqueCurrentFOC(0.0).withSlot(1);
+      new VelocityTorqueCurrentFOC(0.0).withSlot(0);
   private final DCMotorSim driveSim;
   private final DCMotorSim turnSim;
 
@@ -80,8 +81,9 @@ public class ModuleIOSim implements ModuleIO {
   public void updateInputs(final ModuleIOInputs inputs) {
     final var driveSimState = driveTalon.getSimState();
     driveSimState.Orientation = ChassisReference.Clockwise_Positive;
-    // driveSimState.setSupplyVoltage(RoboRioSim.getVInVoltage());
+    driveSimState.setSupplyVoltage(12.0);
     driveSim.setInput(driveSimState.getMotorVoltage());
+    Logger.recordOutput("drive mode", driveTalon.getControlMode().getValue().toString());
 
     driveSim.update(LOOP_PERIOD_SECS);
     turnSim.update(LOOP_PERIOD_SECS);
