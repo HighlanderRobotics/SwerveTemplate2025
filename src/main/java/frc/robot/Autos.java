@@ -63,10 +63,10 @@ public class Autos {
   }
 
   public Command getC1Cycle() {
-    var routine = factory.newRoutine("Cycle RHS Start to C1");
-    var startToC1 = routine.trajectory("RHStoC1");
-    var C1toP1 = routine.trajectory("C1toP1");
-    var P1toC1 = routine.trajectory("P1toC1");
+    var routine = factory.newRoutine("Cycle RHS Start to D");
+    var startToC1 = routine.trajectory("RHStoD");
+    var C1toP1 = routine.trajectory("DtoPRO");
+    var P1toC1 = routine.trajectory("PROtoD");
 
     routine
         .active()
