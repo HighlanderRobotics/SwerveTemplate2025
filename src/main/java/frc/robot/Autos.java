@@ -43,7 +43,7 @@ public class Autos {
   }
 
   public Command getNoneAuto() {
-    var routine = factory.newRoutine("None");
+    final var routine = factory.newRoutine("None");
     routine.active().onTrue(Commands.print("Running empty auto."));
     return routine.cmd();
   }
