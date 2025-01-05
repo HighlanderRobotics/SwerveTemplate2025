@@ -49,8 +49,8 @@ public class Autos {
   }
 
   public Command getTestTriangle() {
-    var routine = factory.newRoutine("Test Triangle");
-    var traj = routine.trajectory("Triangle Test");
+    final var routine = factory.newRoutine("Test Triangle");
+    final var traj = routine.trajectory("Triangle Test");
     routine.active().whileTrue(Commands.sequence(routine.resetOdometry(traj), traj.cmd()));
     return routine.cmd();
   }
