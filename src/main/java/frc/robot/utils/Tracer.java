@@ -1,6 +1,8 @@
 package frc.robot.utils;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
+
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -140,7 +142,7 @@ public class Tracer {
       data = new TraceStartData();
       state.traceStartTimes.put(stack, data);
     }
-    data.set(Logger.getRealTimestamp() / 1000.0, state.totalGCTime());
+    data.set(RobotController.getFPGATime() / 1000.0, state.totalGCTime());
   }
 
   private static void endTrace(final TracerState state) {
@@ -150,7 +152,7 @@ public class Tracer {
       double gcTimeSinceStart = state.totalGCTime() - startData.startGCTotalTime;
       state.gcTimeThisCycle += gcTimeSinceStart;
       state.traceTimes.put(
-          stack, Logger.getRealTimestamp() / 1000.0 - startData.startTime - gcTimeSinceStart);
+          stack, RobotController.getFPGATime() / 1000.0 - startData.startTime - gcTimeSinceStart);
       if (state.traceStack.size() == 0) {
         state.endCycle();
       }

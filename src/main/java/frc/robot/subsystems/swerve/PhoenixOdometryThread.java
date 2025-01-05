@@ -110,7 +110,7 @@ public class PhoenixOdometryThread extends Thread implements OdometryThreadIO {
       writeLock.lock();
 
       for (var registration : registrations) {
-        assert CANBus.isNetworkFD(registration.device.getNetwork()) : "Only CAN FDs supported";
+        assert new CANBus(registration.device.getNetwork()).isNetworkFD() : "Only CAN FDs supported";
 
         registeredSignals.addAll(
             registration.signals.stream()
