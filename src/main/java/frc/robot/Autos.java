@@ -63,10 +63,10 @@ public class Autos {
   }
 
   public Command getDCycle() {
-    var routine = factory.newRoutine("Cycle RHS Start to D");
-    var startToD = routine.trajectory("RHStoD");
-    var DtoPRO = routine.trajectory("DtoPRO");
-    var PROtoD = routine.trajectory("PROtoD");
+    final var routine = factory.newRoutine("Cycle RHS Start to D");
+    final var startToD = routine.trajectory("RHStoD");
+    final var DtoPRO = routine.trajectory("DtoPRO");
+    final var PROtoD = routine.trajectory("PROtoD");
 
     routine
         .active()
