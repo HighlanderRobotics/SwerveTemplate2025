@@ -452,6 +452,30 @@ public class SwerveSubsystem extends SubsystemBase {
     };
   }
 
+  @SuppressWarnings("resource")
+  public Command poseLockDriveCommand(Supplier<Pose2d> targetSupplier) {
+    final PIDController xController = new PIDController(10.0, 0.0, 0.0);
+    final PIDController yController = new PIDController(10.0, 0.0, 0.0);
+    final PIDController thetaController =
+        new PIDController(constants.getHeadingVelocityKP(), 0.0, 0.0);
+    thetaController.enableContinuousInput(-Math.PI, Math.PI);
+    return this.run(
+        () -> {
+          final var pose = getPose();
+          final var target = targetSupplier.get();
+          Logger.recordOutput("Swerve/Target Pose", target);
+          var speeds =
+              new ChassisSpeeds(
+                  xController.calculate(pose.getX(), target.getX()),
+                  yController.calculate(pose.getY(), target.getY()),
+                  thetaController.calculate(
+                      pose.getRotation().getRadians(), target.getRotation().getRadians()));
+          speeds.toRobotRelativeSpeeds(getRotation());
+          Logger.recordOutput("Choreo/Feedback + FF Target Speeds Robot Relative", speeds);
+          this.drive(speeds, false, new double[4], new double[4]);
+        });
+  }
+
   /**
    * Drive at a robot-relative speed.
    *

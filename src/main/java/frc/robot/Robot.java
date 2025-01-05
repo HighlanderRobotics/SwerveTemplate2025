@@ -176,6 +176,7 @@ public class Robot extends LoggedRobot {
     autoChooser.addDefaultOption("None", autos.getNoneAuto());
     autoChooser.addOption("Triangle Test", autos.getTestTriangle());
     autoChooser.addOption("Sprint Test", autos.getTestSprint());
+    autoChooser.addOption("Cycle Demo", autos.getC1Cycle());
 
     // Run auto when auto starts. Matches Choreolib's defer impl
     RobotModeTriggers.autonomous()

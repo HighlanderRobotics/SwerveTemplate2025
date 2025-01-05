@@ -6,6 +6,7 @@ package frc.robot;
 
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoFactory.AutoBindings;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -58,6 +59,49 @@ public class Autos {
     var routine = factory.newRoutine("Test Sprint");
     var traj = routine.trajectory("Sprint Test");
     routine.active().whileTrue(Commands.sequence(routine.resetOdometry(traj), traj.cmd()));
+    return routine.cmd();
+  }
+
+  public Command getC1Cycle() {
+    var routine = factory.newRoutine("Cycle RHS Start to C1");
+    var startToC1 = routine.trajectory("RHStoC1");
+    var C1toP1 = routine.trajectory("C1toP1");
+    var P1toC1 = routine.trajectory("P1toC1");
+
+    routine
+        .active()
+        .whileTrue(Commands.sequence(routine.resetOdometry(startToC1), startToC1.cmd()));
+    routine
+        .observe(startToC1.done())
+        .onTrue(
+            Commands.sequence(
+                // score
+                Commands.waitSeconds(0.5)
+                    .raceWith(
+                        swerve.poseLockDriveCommand(
+                            () -> C1toP1.getInitialPose().orElse(Pose2d.kZero))),
+                C1toP1.cmd()));
+    routine
+        .observe(C1toP1.done())
+        .onTrue(
+            Commands.sequence(
+                // intake
+                Commands.waitSeconds(0.5)
+                    .raceWith(
+                        swerve.poseLockDriveCommand(
+                            () -> P1toC1.getInitialPose().orElse(Pose2d.kZero))),
+                P1toC1.cmd()));
+    routine
+        .observe(P1toC1.done())
+        .onTrue(
+            Commands.sequence(
+                // score
+                Commands.waitSeconds(0.5)
+                    .raceWith(
+                        swerve.poseLockDriveCommand(
+                            () -> C1toP1.getInitialPose().orElse(Pose2d.kZero))),
+                P1toC1.cmd()));
+
     return routine.cmd();
   }
 }
