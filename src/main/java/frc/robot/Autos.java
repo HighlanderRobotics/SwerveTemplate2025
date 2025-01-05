@@ -62,45 +62,45 @@ public class Autos {
     return routine.cmd();
   }
 
-  public Command getC1Cycle() {
+  public Command getDCycle() {
     var routine = factory.newRoutine("Cycle RHS Start to D");
-    var startToC1 = routine.trajectory("RHStoD");
-    var C1toP1 = routine.trajectory("DtoPRO");
-    var P1toC1 = routine.trajectory("PROtoD");
+    var startToD = routine.trajectory("RHStoD");
+    var DtoPRO = routine.trajectory("DtoPRO");
+    var PROtoD = routine.trajectory("PROtoD");
 
     routine
         .active()
-        .whileTrue(Commands.sequence(routine.resetOdometry(startToC1), startToC1.cmd()));
+        .whileTrue(Commands.sequence(routine.resetOdometry(startToD), startToD.cmd()));
     routine
-        .observe(startToC1.done())
+        .observe(startToD.done())
         .onTrue(
             Commands.sequence(
                 // score
                 Commands.waitSeconds(0.5)
                     .raceWith(
                         swerve.poseLockDriveCommand(
-                            () -> C1toP1.getInitialPose().orElse(Pose2d.kZero))),
-                C1toP1.cmd()));
+                            () -> DtoPRO.getInitialPose().orElse(Pose2d.kZero))),
+                DtoPRO.cmd()));
     routine
-        .observe(C1toP1.done())
+        .observe(DtoPRO.done())
         .onTrue(
             Commands.sequence(
                 // intake
                 Commands.waitSeconds(0.5)
                     .raceWith(
                         swerve.poseLockDriveCommand(
-                            () -> P1toC1.getInitialPose().orElse(Pose2d.kZero))),
-                P1toC1.cmd()));
+                            () -> PROtoD.getInitialPose().orElse(Pose2d.kZero))),
+                PROtoD.cmd()));
     routine
-        .observe(P1toC1.done())
+        .observe(PROtoD.done())
         .onTrue(
             Commands.sequence(
                 // score
                 Commands.waitSeconds(0.5)
                     .raceWith(
                         swerve.poseLockDriveCommand(
-                            () -> C1toP1.getInitialPose().orElse(Pose2d.kZero))),
-                P1toC1.cmd()));
+                            () -> DtoPRO.getInitialPose().orElse(Pose2d.kZero))),
+                PROtoD.cmd()));
 
     return routine.cmd();
   }
